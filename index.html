@@ -1,0 +1,1096 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+</head>
+<body>
+<title>Visus</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Schibsted+Grotesk:wght@600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: app de una columna (máx. 30rem), un paso por pantalla; la lámina de prueba es siempre blanca, como un cartel de consultorio */
+:root{
+  --bg:#F1F4F5;
+  --surface:#FFFFFF;
+  --sunken:#E4EAEC;
+  --ink:#10191F;
+  --ink-2:#46545E;
+  --ink-3:#71808A;
+  --line:#D2DADE;
+  --accent:#145F6D;
+  --accent-soft:#D6E8EB;
+  --duo-red:#C9363B;
+  --duo-green:#24875A;
+  --ok:#256F45; --ok-soft:#DBEDE1;
+  --warn:#8C580B; --warn-soft:#F4E7CD;
+  --alert:#AC251F; --alert-soft:#F6DCD9;
+  --info:#145F6D; --info-soft:#D6E8EB;
+  --mark:rgba(201,54,59,.40);
+  --chart-bg:#FFFFFF;
+  --chart-fg:#000000;
+  --chart-veil:rgba(255,255,255,.95);
+  --chart-ink:#10191F;
+  --f-display:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"Spline Sans Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1417; --surface:#162026; --sunken:#1E2A31; --ink:#E6EDF0; --ink-2:#A2B0B9; --ink-3:#7B8A94; --line:#2B3942;
+    --accent:#64B6C5; --accent-soft:#173A42;
+    --duo-red:#E0585C; --duo-green:#46B07F;
+    --ok:#6CC594; --ok-soft:#163426; --warn:#E3AE57; --warn-soft:#382A11; --alert:#F08A82; --alert-soft:#40201D; --info:#64B6C5; --info-soft:#173A42;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1417; --surface:#162026; --sunken:#1E2A31; --ink:#E6EDF0; --ink-2:#A2B0B9; --ink-3:#7B8A94; --line:#2B3942;
+  --accent:#64B6C5; --accent-soft:#173A42;
+  --duo-red:#E0585C; --duo-green:#46B07F;
+  --ok:#6CC594; --ok-soft:#163426; --warn:#E3AE57; --warn-soft:#382A11; --alert:#F08A82; --alert-soft:#40201D; --info:#64B6C5; --info-soft:#173A42;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5;-webkit-font-smoothing:antialiased;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+p,h1,h2,h3,ul,ol,dl,dd,figure{margin:0}
+button{font-family:inherit}
+.app{max-width:30rem;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:0 56px}
+
+/* Header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-block:14px 4px}
+.toprow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:32px}
+.brand{display:flex;align-items:center;gap:9px}
+.mark{width:20px;height:20px;border-radius:50%;background:linear-gradient(90deg,var(--duo-red) 50%,var(--duo-green) 50%);flex:none}
+.word{font:800 1.3rem/1 var(--f-display);letter-spacing:-.035em}
+.tag{font:500 .66rem/1 var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);border:1px solid var(--line);border-radius:4px;padding:3px 5px}
+.distpill{display:inline-flex;align-items:center;gap:7px;font:500 .85rem/1 var(--f-mono);font-variant-numeric:tabular-nums;padding:6px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink)}
+.distpill .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
+.distpill[data-state="ok"] .dot{background:var(--ok)}
+.distpill[data-state="warn"] .dot{background:var(--warn)}
+.progress{display:flex;flex-direction:column;gap:7px;padding-block:12px 10px}
+.bar{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.bar i{height:4px;border-radius:2px;background:var(--line);transition:background .25s}
+.bar i[data-s="done"]{background:var(--ink)}
+.bar i[data-s="now"]{background:var(--accent)}
+.plabel{font:500 .7rem/1 var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+
+/* Type */
+.eyebrow{font:500 .74rem/1.2 var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(1.95rem,7.6vw,2.45rem);line-height:1.04;letter-spacing:-.03em;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:700;font-size:1.65rem;line-height:1.1;letter-spacing:-.022em;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:700;font-size:1.02rem;letter-spacing:-.01em;margin-bottom:10px}
+.lede{font-size:1.1rem;color:var(--ink-2);max-width:36ch}
+.sub{color:var(--ink-2);margin-top:8px}
+.hint{color:var(--ink-3);font-size:.92rem}
+.fine{color:var(--ink-3);font-size:.85rem;line-height:1.45}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.dim{color:var(--ink-3)}
+
+/* Layout */
+section.screen{display:flex;flex-direction:column;gap:22px;padding-top:10px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.hero{display:flex;flex-direction:column;gap:12px;padding-top:6px}
+.actions{display:flex;flex-direction:column;gap:10px}
+
+/* Plan list */
+.plan{list-style:none;padding:0;border-top:1px solid var(--line)}
+.plan li{display:grid;grid-template-columns:1.6rem minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line)}
+.plan .n{font:500 .82rem var(--f-mono);color:var(--ink-3)}
+.plan .what{font-weight:700}
+.plan small{display:block;font-weight:400;color:var(--ink-2);font-size:.88rem}
+.plan .t{font:500 .78rem var(--f-mono);color:var(--ink-3);white-space:nowrap}
+
+/* Buttons */
+.btn{appearance:none;border:0;border-radius:12px;min-height:52px;padding:0 20px;font:700 1.02rem/1.15 var(--f-body);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;text-align:center;transition:transform .08s ease,background-color .15s,opacity .15s}
+.btn:active{transform:scale(.985)}
+.btn-primary{background:var(--ink);color:var(--bg)}
+.btn-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn-quiet{appearance:none;border:0;background:transparent;color:var(--accent);min-height:44px;padding:0 2px;font:700 .98rem var(--f-body);text-decoration:underline;text-underline-offset:3px;cursor:pointer;align-self:flex-start}
+.btn[disabled]{opacity:.35;cursor:not-allowed;transform:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Questions */
+.qs{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.q{display:flex;flex-direction:column;gap:10px;padding:14px 0;border-bottom:1px solid var(--line)}
+.q > p:first-child,.q > label{font-weight:700}
+.yn{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.yn button{min-height:46px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:700 1rem var(--f-body);cursor:pointer}
+.yn button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.q.flag .yes[aria-pressed="true"]{background:var(--alert);border-color:var(--alert);color:var(--bg)}
+input[type="number"]{font:1.05rem var(--f-body);min-height:48px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:0 14px;width:100%}
+.inline{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.inline .btn{width:auto}
+
+/* Urgent */
+.urgentmark{width:56px;height:56px;border-radius:50%;background:var(--alert-soft);color:var(--alert);display:grid;place-items:center;font:800 1.9rem/1 var(--f-display)}
+.note{background:var(--warn-soft);color:var(--ink);border-radius:12px;padding:12px 14px;font-size:.95rem}
+.note.info{background:var(--info-soft)}
+
+/* Card calibration */
+.cardstage{display:flex;justify-content:center;overflow:hidden;padding:4px 0}
+.cardrect{flex:none;background:var(--accent-soft);border:2px solid var(--accent);display:grid;place-items:center;position:relative}
+.cardrect::before{content:"";position:absolute;left:14px;top:12px;bottom:12px;width:0;border-left:1.5px dashed var(--accent);opacity:.6}
+.cardlabel{font:500 .82rem var(--f-mono);color:var(--accent);background:var(--accent-soft);padding:2px 6px}
+.stepper{display:flex;align-items:center;gap:12px}
+.stepper input{flex:1;min-width:0;accent-color:var(--accent);height:32px}
+.round{width:48px;height:48px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:600 1.4rem/1 var(--f-body);flex:none;cursor:pointer;display:grid;place-items:center}
+.readline{display:flex;justify-content:space-between;align-items:baseline;color:var(--ink-2);border-bottom:1px solid var(--line);padding-bottom:10px}
+
+/* Distance */
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--sunken);border-radius:12px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;min-height:44px;border-radius:9px;font:700 .98rem var(--f-body);color:var(--ink-2);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(16,25,31,.14)}
+.camslot{position:relative;aspect-ratio:4/3;max-width:100%;background:var(--sunken);border-radius:var(--r);overflow:hidden;display:grid;place-items:center;padding:18px}
+.camidle{display:flex;flex-direction:column;gap:14px;align-items:stretch;text-align:left;color:var(--ink-2);font-size:.95rem}
+.readout{display:flex;align-items:baseline;gap:6px;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.readout .v{font-size:3.6rem;font-weight:500;letter-spacing:-.04em;line-height:1;color:var(--ink)}
+.readout .u{font-size:1.1rem;color:var(--ink-2)}
+.readout[data-state="ok"] .v{color:var(--ok)}
+.readout[data-state="warn"] .v{color:var(--warn)}
+.readout.small .v{font-size:2.4rem}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips button{min-height:44px;padding:0 18px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:600 1rem var(--f-mono);cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.camdock{position:absolute;overflow:hidden;border-radius:var(--r);z-index:5;background:#000}
+.camdock.parked{position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:.01;pointer-events:none;border-radius:0}
+.camdock video,.camdock canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+
+/* Eye cover art */
+.eyeart svg{display:block;width:100%;max-width:240px}
+.ea-lid{fill:var(--surface);stroke:var(--ink);stroke-width:2.2}
+.ea-iris{fill:var(--accent)}
+.ea-pupil{fill:var(--ink)}
+.ea-palm{fill:var(--sunken);stroke:var(--ink-3);stroke-width:2;stroke-dasharray:5 4}
+.ea-label{font:500 11px var(--f-mono);fill:var(--ink-3);letter-spacing:.06em}
+.ea-label.on{fill:var(--ink)}
+
+/* Charts */
+.chart{position:relative;background:var(--chart-bg);border:1px solid var(--line);border-radius:var(--r);min-height:min(40vh,320px);display:grid;place-items:center;touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden}
+.chart svg{display:block;fill:var(--chart-fg)}
+.chart.short{min-height:150px}
+.pause{position:absolute;inset:0;background:var(--chart-veil);display:grid;place-items:center;text-align:center;padding:24px;color:var(--chart-ink);font-weight:700;font-size:1.05rem}
+.chartmeta{display:flex;justify-content:space-between;align-items:center;gap:12px;font:500 .82rem var(--f-mono);color:var(--ink-3);font-variant-numeric:tabular-nums}
+.chartmeta b{color:var(--ink);font-weight:600}
+.ask{font-weight:700;text-align:center}
+.pad{display:grid;grid-template-columns:repeat(3,76px);grid-template-rows:repeat(3,60px);gap:8px;justify-content:center}
+.pad button{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:14px;display:grid;place-items:center;cursor:pointer;transition:background-color .12s}
+.pad button:active{background:var(--sunken)}
+.pad svg{width:24px;height:24px;fill:currentColor}
+.pad .up{grid-area:1/2}
+.pad .left{grid-area:2/1}
+.pad .mid{grid-area:2/2;font:700 .78rem/1.1 var(--f-body);padding:4px}
+.pad .right{grid-area:2/3}
+.pad .down{grid-area:3/2}
+.amwrap{display:flex;justify-content:center;background:var(--chart-bg);border:1px solid var(--line);border-radius:var(--r);padding:12px;touch-action:manipulation}
+.amwrap svg{display:block;cursor:crosshair}
+.am-bg{fill:var(--chart-bg)}
+.am-line{stroke:var(--chart-fg);stroke-width:1.2px;vector-effect:non-scaling-stroke}
+.am-mark{fill:var(--mark)}
+.am-dot{fill:var(--chart-fg)}
+.formula{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:.84rem;color:var(--ink-2)}
+
+/* Report */
+.findings{list-style:none;padding:0;display:flex;flex-direction:column;gap:8px}
+.finding{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.finding b{display:block;line-height:1.3}
+.finding span.d{display:block;color:var(--ink-2);font-size:.92rem;margin-top:3px}
+.chip{font:600 .66rem/1 var(--f-mono);letter-spacing:.07em;text-transform:uppercase;padding:5px 7px;border-radius:6px;white-space:nowrap;margin-top:2px}
+.chip.alert{background:var(--alert-soft);color:var(--alert)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.info{background:var(--info-soft);color:var(--info)}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.rtable{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr);border-top:1px solid var(--line)}
+.rtable > div{padding:10px 6px 10px 0;border-bottom:1px solid var(--line);min-width:0;overflow-wrap:break-word;hyphens:auto}
+.rtable .h{font:600 .78rem var(--f-mono);letter-spacing:.06em;color:var(--ink)}
+.rtable .h small{display:block;font-weight:400;color:var(--ink-3);letter-spacing:0;font-size:.72rem}
+.rtable .k{color:var(--ink-2);font-size:.9rem}
+.rtable .v{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.92rem}
+.rtable .v small{display:block;color:var(--ink-3);font-size:.74rem;line-height:1.35;margin-top:2px;font-family:var(--f-body)}
+.t-alert{color:var(--alert);font-weight:600}
+.maps{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.maps figure{display:flex;flex-direction:column;gap:6px}
+.maps svg{display:block;width:100%;max-width:150px;border:1px solid var(--line);border-radius:6px}
+.maps figcaption{font:500 .76rem var(--f-mono);color:var(--ink-3)}
+.method{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;font-size:.9rem}
+.method dt{color:var(--ink-3)}
+.method dd{color:var(--ink)}
+textarea{width:100%;min-height:200px;font:.82rem/1.45 var(--f-mono);border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:12px}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(22px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:999px;font:700 .95rem var(--f-body);z-index:50;max-width:calc(100% - 32px);text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.18)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="toprow">
+      <div class="brand"><span class="mark" aria-hidden="true"></span><span class="word">Visus</span><span class="tag">prototipo</span></div>
+      <div class="distpill" id="distpill" data-state="off" hidden><span class="dot"></span><span id="distpillText">— cm</span></div>
+    </div>
+    <nav class="progress" id="progress" aria-label="Progreso" hidden>
+      <div class="bar"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <span class="plabel" id="progressLabel"></span>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Bienvenida -->
+    <section class="screen" data-screen="welcome">
+      <div class="hero">
+        <p class="eyebrow">Chequeo visual guiado</p>
+        <h1>Medí tu vista con el celular y llevale el resultado a tu oftalmólogo.</h1>
+        <p class="lede">Son unos 8 minutos. La cámara frontal mide a qué distancia estás y ajusta sola el tamaño de las figuras: no hace falta medir nada.</p>
+      </div>
+      <p class="note" id="embedNote" hidden>Esta vista no permite usar la cámara. Para hacer el chequeo, abrí Visus desde el navegador del celular. Acá podés ver el informe de ejemplo.</p>
+      <ol class="plan">
+        <li><span class="n">1</span><span class="what">Preguntas de seguridad<small>Para descartar síntomas urgentes</small></span><span class="t">1 min</span></li>
+        <li><span class="n">2</span><span class="what">Tamaño de pantalla<small>Con una tarjeta o la SUBE</small></span><span class="t">1 min</span></li>
+        <li><span class="n">3</span><span class="what">Distancia<small>Automática, con la cámara frontal</small></span><span class="t">1 min</span></li>
+        <li><span class="n">4</span><span class="what">Agudeza de cerca<small>Una E por vez, cada ojo por separado</small></span><span class="t">3 min</span></li>
+        <li><span class="n">5</span><span class="what">Rejilla de Amsler<small>Revisa la zona central de la retina</small></span><span class="t">1 min</span></li>
+        <li><span class="n">6</span><span class="what">Graduación (opcional)<small>Estimación de miopía por punto lejano</small></span><span class="t">2 min</span></li>
+      </ol>
+      <div class="actions">
+        <button class="btn btn-primary" data-go="triage">Empezar</button>
+        <button class="btn btn-ghost" id="exampleBtn">Ver un informe de ejemplo</button>
+      </div>
+      <p class="fine">Prototipo para probar la idea. No reemplaza la consulta ni sirve para hacer anteojos. Si notás un cambio brusco en la visión, consultá en una guardia.</p>
+    </section>
+
+    <!-- Triage -->
+    <section class="screen" data-screen="triage" hidden>
+      <div>
+        <h2>Antes de empezar</h2>
+        <p class="sub">Si respondés que sí a alguna de estas preguntas, el test se frena: esos síntomas hay que verlos en persona.</p>
+      </div>
+      <div class="qs">
+        <div class="q flag"><p>¿Perdiste visión de golpe, en horas o pocos días?</p><div class="yn" data-key="sudden"><button class="yes" data-v="1" aria-pressed="false">Sí</button><button data-v="0" aria-pressed="false">No</button></div></div>
+        <div class="q flag"><p>¿Tenés dolor fuerte en el ojo, o el ojo muy rojo con dolor?</p><div class="yn" data-key="pain"><button class="yes" data-v="1" aria-pressed="false">Sí</button><button data-v="0" aria-pressed="false">No</button></div></div>
+        <div class="q flag"><p>¿Ves destellos, muchas manchas nuevas o una sombra como una cortina?</p><div class="yn" data-key="flashes"><button class="yes" data-v="1" aria-pressed="false">Sí</button><button data-v="0" aria-pressed="false">No</button></div></div>
+        <div class="q flag"><p>¿Te golpeaste el ojo o te entró un producto químico?</p><div class="yn" data-key="trauma"><button class="yes" data-v="1" aria-pressed="false">Sí</button><button data-v="0" aria-pressed="false">No</button></div></div>
+      </div>
+      <div class="qs">
+        <div class="q"><label for="age">Edad</label><input id="age" type="number" inputmode="numeric" min="5" max="110" placeholder="Años"></div>
+        <div class="q"><p>¿Usás anteojos o lentes de contacto?</p><div class="yn" data-key="wears"><button data-v="1" aria-pressed="false">Sí</button><button data-v="0" aria-pressed="false">No</button></div></div>
+        <div class="q" id="qWearing" hidden><p>¿Los tenés puestos para hacer el test?</p><div class="yn" data-key="wearingNow"><button data-v="1" aria-pressed="false">Sí</button><button data-v="0" aria-pressed="false">No</button></div><p class="hint">Para la visión de cerca, usá los de leer si tenés.</p></div>
+      </div>
+      <button class="btn btn-primary" id="triageNext" disabled>Continuar</button>
+    </section>
+
+    <!-- Urgente -->
+    <section class="screen" data-screen="urgent" hidden>
+      <div class="urgentmark" aria-hidden="true">!</div>
+      <h2>Esto conviene verlo hoy, en persona</h2>
+      <p>Marcaste un síntoma que puede indicar un problema que necesita atención rápida, y este test no puede descartarlo.</p>
+      <p><strong>Consultá hoy en una guardia oftalmológica.</strong></p>
+      <p class="note" id="chemNote" hidden>Si te entró un producto químico, enjuagá el ojo con abundante agua durante 15 minutos antes de salir.</p>
+      <button class="btn btn-ghost" data-go="triage">Corregir mis respuestas</button>
+    </section>
+
+    <!-- Pantalla -->
+    <section class="screen" data-screen="screen" hidden>
+      <div>
+        <h2>Medí tu pantalla</h2>
+        <p class="sub">El navegador no informa cuánto mide tu pantalla en centímetros. Apoyá una tarjeta parada sobre la pantalla y ajustá el rectángulo hasta que tenga su mismo tamaño.</p>
+      </div>
+      <div class="cardstage"><div class="cardrect" id="cardRect"><span class="cardlabel">alto 8,56 cm</span></div></div>
+      <div class="stepper">
+        <button class="round" id="pxMinus" aria-label="Achicar el rectángulo">−</button>
+        <input type="range" id="pxRange" min="2.5" max="8.5" step="0.01" aria-label="Tamaño del rectángulo">
+        <button class="round" id="pxPlus" aria-label="Agrandar el rectángulo">+</button>
+      </div>
+      <p class="readline"><span>Escala de tu pantalla</span><span class="mono" id="pxValue">—</span></p>
+      <p class="hint">Sirve cualquier tarjeta de tamaño estándar: DNI, SUBE, crédito, débito o la credencial de la obra social. Se hace una sola vez: el celular lo recuerda.</p>
+      <button class="btn btn-primary" id="cardOk">Ya coincide</button>
+    </section>
+
+    <!-- Distancia -->
+    <section class="screen" data-screen="distance" hidden>
+      <div>
+        <h2>Activá la cámara</h2>
+        <p class="sub">Durante todo el chequeo, la cámara frontal mide a qué distancia estás y ajusta el tamaño de cada figura.</p>
+      </div>
+      <div id="camPanel" class="stack">
+        <div class="camslot" id="camslot">
+          <div class="camidle">
+            <p>La cámara frontal mide el tamaño de tu iris, que es casi igual en todos los adultos (11,7 mm), y con eso calcula la distancia. La imagen se procesa en tu dispositivo y no se envía a ningún lado.</p>
+            <button class="btn btn-primary" id="camStart">Activar cámara</button>
+          </div>
+        </div>
+        <div class="readout" id="readout" data-state="off" hidden><span class="v" id="readV">—</span><span class="u">cm</span></div>
+        <p class="hint" id="readHint" hidden></p>
+        <div class="note" id="camError" hidden><p id="camErrorText"></p><button class="btn btn-ghost" id="camRetry" style="margin-top:10px">Reintentar</button></div>
+      </div>
+      <button class="btn btn-primary" id="distanceNext">Continuar</button>
+    </section>
+
+    <!-- Agudeza -->
+    <section class="screen" data-screen="acuity" hidden>
+      <div id="acCover" class="stack">
+        <p class="eyebrow">Agudeza de cerca</p>
+        <h2 id="acEyeName">Ojo derecho (OD)</h2>
+        <div class="eyeart" id="acEyeArt"></div>
+        <p id="acEyeHow"></p>
+        <p class="hint">Vas a ver una letra E. Tocá el botón con la E que apunta para el mismo lado, o deslizá el dedo sobre la lámina. Si no la distinguís, tocá «No la veo»: adivinar no ayuda.</p>
+        <button class="btn btn-primary" id="acStart">Empezar con este ojo</button>
+      </div>
+      <div id="acTest" class="stack" hidden>
+        <div class="chart" id="acChart">
+          <svg id="eSvg" viewBox="0 0 5 5" role="img" aria-label="Letra E"><g id="eGroup"><rect x="0" y="0" width="1" height="5"/><rect x="0" y="0" width="5" height="1"/><rect x="0" y="2" width="5" height="1"/><rect x="0" y="4" width="5" height="1"/></g></svg>
+          <div class="pause" id="acPause" hidden><p id="acPauseText"></p></div>
+        </div>
+        <div class="chartmeta"><span><b id="acEye">OD</b> · <span id="acDist">40 cm</span></span><span id="acCount">Figura 1</span></div>
+        <p class="ask">¿Para dónde apuntan las patas de la E?</p>
+        <div class="pad" id="acPad">
+          <button class="up" data-dir="up" aria-label="Arriba"></button>
+          <button class="left" data-dir="left" aria-label="Izquierda"></button>
+          <button class="mid" data-dir="none">No la veo</button>
+          <button class="right" data-dir="right" aria-label="Derecha"></button>
+          <button class="down" data-dir="down" aria-label="Abajo"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Amsler -->
+    <section class="screen" data-screen="amsler" hidden>
+      <div id="amCover" class="stack">
+        <p class="eyebrow">Rejilla de Amsler</p>
+        <h2 id="amEyeName">Ojo derecho (OD)</h2>
+        <div class="eyeart" id="amEyeArt"></div>
+        <p id="amEyeHow"></p>
+        <p class="hint">Mirá fijo el punto del centro. Sin mover el ojo, fijate si alguna línea se ve torcida, borrosa o si falta un pedazo, y tocá esas zonas.</p>
+        <button class="btn btn-primary" id="amStart">Ver la rejilla</button>
+      </div>
+      <div id="amTest" class="stack" hidden>
+        <div class="amwrap" id="amWrap"></div>
+        <div class="chartmeta"><span id="amCount">Sin marcas</span><button class="btn-quiet" id="amClear">Borrar marcas</button></div>
+        <button class="btn btn-primary" id="amDone">Todas las líneas se ven rectas</button>
+      </div>
+    </section>
+
+    <!-- Punto lejano -->
+    <section class="screen" data-screen="far" hidden>
+      <div id="farIntro" class="stack">
+        <p class="eyebrow">Opcional · experimental</p>
+        <h2>Estimación de miopía</h2>
+        <p>Un ojo miope ve nítido solo hasta cierta distancia, el punto lejano. Si medimos dónde está, la graduación aproximada es 1 dividido esa distancia en metros.</p>
+        <p class="formula mono">50 cm → −2,00 D · 33 cm → −3,00 D · 25 cm → −4,00 D</p>
+        <p class="note" id="farGlasses" hidden>Sacate los anteojos o lentes de contacto para este paso.</p>
+        <p class="hint">Solo detecta miopía de −1,50 D en adelante (el brazo no llega más lejos) y no mide hipermetropía.</p>
+        <div class="actions">
+          <button class="btn btn-primary" id="farDo">Hacer la estimación</button>
+          <button class="btn btn-ghost" id="farSkip">Saltar e ir al informe</button>
+        </div>
+      </div>
+      <div id="farCover" class="stack" hidden>
+        <p class="eyebrow">Punto lejano</p>
+        <h2 id="faEyeName">Ojo derecho (OD)</h2>
+        <div class="eyeart" id="faEyeArt"></div>
+        <p id="faEyeHow"></p>
+        <button class="btn btn-primary" id="faStart">Empezar con este ojo</button>
+      </div>
+      <div id="farTest" class="stack" hidden>
+        <div class="chart short"><svg id="farSvg" viewBox="0 0 45 5" role="img" aria-label="Fila de letras E"></svg></div>
+        <div id="farCam" class="stack">
+          <p>Empezá con el celular cerca de la cara, donde las E se ven nítidas. Alejalo despacio y tocá el botón apenas empiecen a verse borrosas.</p>
+          <div class="readout small"><span class="v" id="farLive">—</span></div>
+          <div class="actions">
+            <button class="btn btn-primary" id="farBlur">Ahora se ven borrosas</button>
+            <button class="btn btn-ghost" id="farSharp">Siguen nítidas con el brazo estirado</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Informe -->
+    <section class="screen" data-screen="report" hidden>
+      <p class="note info" id="exampleBanner" hidden>Informe de ejemplo con datos ficticios. Así le llegaría el resultado al oftalmólogo.</p>
+      <div>
+        <p class="eyebrow" id="repDate"></p>
+        <h2 style="margin-top:6px">Informe de chequeo visual</h2>
+        <p class="sub" id="repWho"></p>
+      </div>
+      <div><h3>Para revisar</h3><ul class="findings" id="repFindings"></ul></div>
+      <div><h3>Resultados por ojo</h3><div class="rtable" id="repTable"></div></div>
+      <div><h3>Rejilla de Amsler</h3><div class="maps" id="repMaps"></div></div>
+      <div><h3>Cómo se midió</h3><dl class="method" id="repMethod"></dl></div>
+      <div class="actions">
+        <button class="btn btn-primary" id="copyBtn">Copiar informe</button>
+        <button class="btn btn-ghost" id="dlBtn">Descargar (.txt)</button>
+        <button class="btn-quiet" id="againBtn">Empezar de nuevo</button>
+      </div>
+      <textarea id="reportTa" hidden readonly aria-label="Texto del informe"></textarea>
+      <p class="fine">Resultado orientativo de un prototipo. No es un diagnóstico ni una receta.</p>
+    </section>
+  </main>
+</div>
+
+<div class="camdock parked" id="camdock"><video id="video" playsinline muted autoplay></video><canvas id="overlay"></canvas></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+'use strict';
+document.documentElement.lang = 'es';
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+
+const IRIS_MM = 11.7;
+const MP = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+const MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+const DIRS = ['right', 'down', 'left', 'up'];
+const ROT = { right: 0, down: 90, left: 180, up: 270 };
+const SNELLEN = { '-3': 10, '-2': 12.5, '-1': 16, '0': 20, '1': 25, '2': 32, '3': 40, '4': 50, '5': 63, '6': 80, '7': 100, '8': 125, '9': 160, '10': 200 };
+const DEC = { '-3': '2,0', '-2': '1,6', '-1': '1,25', '0': '1,0', '1': '0,8', '2': '0,63', '3': '0,5', '4': '0,4', '5': '0,32', '6': '0,25', '7': '0,2', '8': '0,16', '9': '0,125', '10': '0,1' };
+const RANGE = { min: 28, max: 70 };
+const STEPS = [['triage', 'Seguridad'], ['screen', 'Pantalla'], ['distance', 'Distancia'], ['acuity', 'Agudeza'], ['amsler', 'Amsler'], ['far', 'Graduación'], ['report', 'Informe']];
+const SEV_LABEL = { alert: 'Consultar', warn: 'Revisar', info: 'Dato', ok: 'OK' };
+
+const store = {
+  get(k) { try { const v = localStorage.getItem('visus.' + k); return v == null ? null : JSON.parse(v); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem('visus.' + k, JSON.stringify(v)); } catch (e) {} }
+};
+const coarse = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+
+function freshState() {
+  return {
+    screen: 'welcome', example: false,
+    triage: { sudden: null, pain: null, flashes: null, trauma: null },
+    age: null, wears: null, wearingNow: null,
+    distMode: 'camera',
+    acuity: { OD: null, OI: null }, amsler: { OD: null, OI: null }, far: { OD: null, OI: null, skipped: false },
+    date: new Date()
+  };
+}
+const Cam = { on: false, starting: false, stream: null, landmarker: null, f: store.get('focalPx'), fCalibrated: !!store.get('focalPx'), samples: [], cm: null, lastCm: null, lastSeen: 0, irisPx: null, iris: null, sel: 'both', lastVideoTime: -1, unavailable: false };
+const camBlocked = (() => { try { return !!(document.featurePolicy && !document.featurePolicy.allowsFeature('camera')); } catch (e) { return false; } })();
+let S = freshState();
+let pxPerMm = store.get('pxPerMm') || (coarse ? 6.3 : 3.78);
+let pxCalibrated = !!store.get('pxPerMm');
+let A = null, M = null, F = null;
+let greenColor = '#24875A';
+
+/* ---------- helpers ---------- */
+const fmtNum = (n, d) => n.toLocaleString('es-AR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtCm = cm => Math.round(cm) + ' cm';
+function fmtLog(lv) { if (lv == null) return 'peor que 1,0'; const v = lv / 10; return (v < 0 ? '−' : '') + fmtNum(Math.abs(v), 1); }
+function fmtD(D) { if (D == null) return '—'; if (D === 0) return '0,00 D'; return (D < 0 ? '−' : '+') + fmtNum(Math.abs(D), 2) + ' D'; }
+const fmtSn = n => String(n).replace('.', ',');
+const median = a => { const b = [...a].sort((x, y) => x - y); const m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+const quarter = x => Math.round(x * 4) / 4;
+const eyeWord = e => e === 'OD' ? 'derecho' : 'izquierdo';
+function eShape(rot) { return `<g transform="rotate(${rot} 2.5 2.5)"><rect x="0" y="0" width="1" height="5"/><rect x="0" y="0" width="5" height="1"/><rect x="0" y="2" width="5" height="1"/><rect x="0" y="4" width="5" height="1"/></g>`; }
+let toastTimer;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2400); }
+let wakeLock = null;
+async function wake(on) {
+  try {
+    if (on && !wakeLock && navigator.wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+    if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch (e) { wakeLock = null; }
+}
+
+/* ---------- navigation ---------- */
+function renderProgress(name) {
+  const key = name === 'urgent' ? 'triage' : name;
+  const idx = STEPS.findIndex(s => s[0] === key);
+  const nav = $('#progress');
+  nav.hidden = idx < 0 || S.example;
+  if (idx < 0) return;
+  $$('.bar i', nav).forEach((el, i) => { el.dataset.s = i < idx ? 'done' : (i === idx ? 'now' : 'todo'); });
+  $('#progressLabel').textContent = `Paso ${idx + 1} de ${STEPS.length} · ${STEPS[idx][1]}`;
+}
+const onEnter = {
+  urgent: () => { $('#chemNote').hidden = !S.triage.trauma; },
+  screen: renderCard,
+  distance: enterDistance,
+  acuity: () => acuityCover('OD'),
+  amsler: () => amslerCover('OD'),
+  far: enterFar,
+  report: () => { wake(false); renderReport(); }
+};
+function go(name) {
+  S.screen = name;
+  $$('section[data-screen]').forEach(s => { s.hidden = s.dataset.screen !== name; });
+  renderProgress(name);
+  window.scrollTo(0, 0);
+  try { greenColor = getComputedStyle(document.documentElement).getPropertyValue('--duo-green').trim() || greenColor; } catch (e) {}
+  if (onEnter[name]) onEnter[name]();
+  positionCam();
+  tick(true);
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) go(b.dataset.go); });
+
+/* ---------- triage ---------- */
+$$('.yn').forEach(group => {
+  group.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const key = group.dataset.key; const val = b.dataset.v === '1';
+    $$('button', group).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    if (key in S.triage) S.triage[key] = val; else S[key] = val;
+    if (key === 'wears') { $('#qWearing').hidden = !val; if (!val) S.wearingNow = false; else S.wearingNow = null; $$('#qWearing button').forEach(x => x.setAttribute('aria-pressed', 'false')); }
+    updateTriage();
+  });
+});
+function updateTriage() { $('#triageNext').disabled = !Object.values(S.triage).every(v => v !== null); }
+$('#triageNext').addEventListener('click', () => {
+  const a = parseInt($('#age').value, 10);
+  S.age = Number.isFinite(a) ? Math.max(5, Math.min(110, a)) : null;
+  go(Object.values(S.triage).some(Boolean) ? 'urgent' : 'screen');
+});
+
+/* ---------- screen calibration ---------- */
+function renderCard() {
+  const r = $('#cardRect');
+  r.style.width = (53.98 * pxPerMm).toFixed(1) + 'px';
+  r.style.height = (85.6 * pxPerMm).toFixed(1) + 'px';
+  r.style.borderRadius = (3.18 * pxPerMm).toFixed(1) + 'px';
+  $('#pxRange').value = pxPerMm.toFixed(2);
+  $('#pxValue').textContent = fmtNum(pxPerMm, 2) + ' px/mm';
+}
+$('#pxRange').addEventListener('input', e => { pxPerMm = parseFloat(e.target.value); renderCard(); });
+$('#pxMinus').addEventListener('click', () => { pxPerMm = Math.max(2.5, pxPerMm - 0.02); renderCard(); });
+$('#pxPlus').addEventListener('click', () => { pxPerMm = Math.min(8.5, pxPerMm + 0.02); renderCard(); });
+$('#cardOk').addEventListener('click', () => { store.set('pxPerMm', pxPerMm); pxCalibrated = true; go('distance'); });
+
+/* ---------- distance ---------- */
+function enterDistance() {
+  setIrisSel('both');
+  $('#distanceNext').disabled = !(Cam.on && Cam.lastSeen);
+  if (camBlocked && !Cam.on) camUnavailable('embed');
+}
+$('#distanceNext').addEventListener('click', () => go('acuity'));
+$('#camStart').addEventListener('click', startCamera);
+$('#camRetry').addEventListener('click', () => { $('#camError').hidden = true; Cam.unavailable = false; startCamera(); });
+function setHint(text) { const h = $('#readHint'); h.textContent = text; h.hidden = !text; }
+
+function faceOk() { return Cam.on && performance.now() - Cam.lastSeen < 800; }
+function currentCm() {
+  if (!Cam.on) return null;
+  if (faceOk()) return Cam.cm;
+  if (Cam.lastCm && performance.now() - Cam.lastSeen < 15000) return Cam.lastCm;
+  return null;
+}
+function setIrisSel(sel) { if (Cam.sel !== sel) { Cam.sel = sel; Cam.samples = []; } }
+function defaultFocal(W, H) { return (Math.hypot(W, H) / 2) / Math.tan((74 * Math.PI / 180) / 2); }
+
+async function startCamera() {
+  if (Cam.on || Cam.starting) return;
+  Cam.starting = true;
+  setHint('Pidiendo permiso para usar la cámara…');
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('unsupported');
+    Cam.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+  } catch (e) { Cam.starting = false; camUnavailable(window.isSecureContext === false ? 'insecure' : ((e && e.name) || 'camera')); return; }
+  const v = $('#video');
+  v.srcObject = Cam.stream;
+  try { await v.play(); } catch (e) {}
+  positionCam();
+  setHint('Cargando el detector de rostro…');
+  try {
+    const vision = await import(MP + '/vision_bundle.mjs');
+    const files = await vision.FilesetResolver.forVisionTasks(MP + '/wasm');
+    const opts = d => ({ baseOptions: { modelAssetPath: MODEL, delegate: d }, runningMode: 'VIDEO', numFaces: 1 });
+    try { Cam.landmarker = await vision.FaceLandmarker.createFromOptions(files, opts('GPU')); }
+    catch (e) { Cam.landmarker = await vision.FaceLandmarker.createFromOptions(files, opts('CPU')); }
+  } catch (e) { Cam.starting = false; stopCamera(); camUnavailable('model'); return; }
+  Cam.on = true; Cam.starting = false;
+  $('#readout').hidden = false;
+  setHint('Mirá de frente a la cámara.');
+  positionCam();
+  requestAnimationFrame(loop);
+}
+function stopCamera() {
+  if (Cam.stream) Cam.stream.getTracks().forEach(t => t.stop());
+  Cam.stream = null; Cam.on = false;
+  if (Cam.landmarker && Cam.landmarker.close) { try { Cam.landmarker.close(); } catch (e) {} }
+  Cam.landmarker = null;
+  positionCam();
+}
+const CAM_MSG = {
+  embed: 'Esta vista no permite usar la cámara. Abrí Visus desde el navegador del celular (Chrome o Safari) para hacer el chequeo.',
+  insecure: 'La cámara solo funciona si la página se abre con una dirección https.',
+  NotAllowedError: 'No hay permiso para usar la cámara. Habilitalo en la configuración del sitio (el ícono junto a la dirección, en el navegador) y tocá Reintentar. Si abriste el link dentro de otra app, abrilo en Chrome o Safari.',
+  NotFoundError: 'No encontramos una cámara frontal en este dispositivo.',
+  NotReadableError: 'Otra app está usando la cámara. Cerrala y tocá Reintentar.',
+  model: 'La cámara funciona, pero no se pudo descargar el detector de rostro. Revisá la conexión y tocá Reintentar.',
+  camera: 'No se pudo encender la cámara. Tocá Reintentar.'
+};
+function camUnavailable(kind) {
+  Cam.unavailable = true;
+  $('#camErrorText').textContent = CAM_MSG[kind] || CAM_MSG.camera;
+  $('#camRetry').hidden = kind === 'embed' || kind === 'insecure' || kind === 'NotFoundError';
+  $('#camError').hidden = false;
+  setHint('');
+}
+function loop() {
+  if (!Cam.on) return;
+  requestAnimationFrame(loop);
+  const v = $('#video');
+  if (!Cam.landmarker || v.readyState < 2) return;
+  if (v.currentTime === Cam.lastVideoTime) { tick(); return; }
+  Cam.lastVideoTime = v.currentTime;
+  let res = null;
+  try { res = Cam.landmarker.detectForVideo(v, performance.now()); } catch (e) { return; }
+  const lm = res && res.faceLandmarks && res.faceLandmarks[0];
+  const W = v.videoWidth, H = v.videoHeight;
+  if (lm && lm.length >= 478) {
+    const P = i => ({ x: lm[i].x * W, y: lm[i].y * H });
+    const dist = (a, b) => { const p = P(a), q = P(b); return Math.hypot(p.x - q.x, p.y - q.y); };
+    const a = { c: P(468), d: Math.max(dist(469, 471), dist(470, 472)) };
+    const b = { c: P(473), d: Math.max(dist(474, 476), dist(475, 477)) };
+    // En la imagen sin espejar, el ojo derecho de la persona queda a la izquierda.
+    const od = a.c.x < b.c.x ? a : b, oi = od === a ? b : a;
+    const px = Cam.sel === 'OD' ? od.d : (Cam.sel === 'OI' ? oi.d : (od.d + oi.d) / 2);
+    if (px > 2) {
+      Cam.samples.push(px); if (Cam.samples.length > 9) Cam.samples.shift();
+      if (!Cam.f) Cam.f = defaultFocal(W, H);
+      Cam.irisPx = median(Cam.samples);
+      Cam.cm = (Cam.f * IRIS_MM / Cam.irisPx) / 10;
+      Cam.lastCm = Cam.cm;
+      Cam.lastSeen = performance.now();
+      Cam.iris = { od, oi };
+    }
+  } else { Cam.iris = null; }
+  drawOverlay();
+  tick();
+}
+function drawOverlay() {
+  if (S.screen !== 'distance') return;
+  const c = $('#overlay'), v = $('#video');
+  if (!v.videoWidth) return;
+  if (c.width !== v.videoWidth) { c.width = v.videoWidth; c.height = v.videoHeight; }
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, c.width, c.height);
+  if (!Cam.iris || !faceOk()) return;
+  g.lineWidth = Math.max(2, c.width / 200);
+  g.strokeStyle = greenColor;
+  [Cam.iris.od, Cam.iris.oi].forEach(e => { g.beginPath(); g.arc(e.c.x, e.c.y, e.d / 2 + g.lineWidth, 0, Math.PI * 2); g.stroke(); });
+}
+function positionCam() {
+  const dock = $('#camdock'), slot = $('#camslot');
+  const show = Cam.stream && S.screen === 'distance' && S.distMode === 'camera' && !slot.closest('[hidden]');
+  if (show) {
+    const r = slot.getBoundingClientRect();
+    dock.className = 'camdock';
+    dock.style.left = (r.left + window.scrollX) + 'px';
+    dock.style.top = (r.top + window.scrollY) + 'px';
+    dock.style.width = r.width + 'px';
+    dock.style.height = r.height + 'px';
+  } else {
+    dock.className = 'camdock parked';
+    dock.removeAttribute('style');
+  }
+}
+window.addEventListener('resize', positionCam);
+
+let lastTick = 0;
+function tick(force) {
+  const now = performance.now();
+  if (!force && now - lastTick < 66) return;
+  lastTick = now;
+  const camLive = Cam.on && S.distMode === 'camera';
+  const pill = $('#distpill');
+  pill.hidden = !(camLive && ['acuity', 'amsler', 'far'].includes(S.screen));
+  if (!pill.hidden) {
+    const cm = faceOk() ? Cam.cm : null;
+    $('#distpillText').textContent = cm ? fmtCm(cm) : 'sin rostro';
+    pill.dataset.state = !cm ? 'off' : (cm < RANGE.min || cm > RANGE.max ? 'warn' : 'ok');
+  }
+  if (S.screen === 'distance' && Cam.on) renderDistanceLive();
+  if (S.screen === 'acuity' && A && camLive) sizeE(false);
+  if (S.screen === 'far' && F && camLive) sizeFar(false);
+}
+function renderDistanceLive() {
+  const cm = faceOk() ? Cam.cm : null;
+  const ro = $('#readout');
+  $('#readV').textContent = cm ? Math.round(cm) : '—';
+  const st = !cm ? 'off' : (cm >= 32 && cm <= 50 ? 'ok' : 'warn');
+  ro.dataset.state = st;
+  $('#distanceNext').disabled = !Cam.lastSeen;
+  setHint(!cm ? 'Mirá de frente a la cámara, con la cara bien iluminada.'
+    : st === 'ok' ? 'Bien. Mantené más o menos esta distancia durante los tests.'
+    : cm < 32 ? 'Un poco cerca: alejá el celular hasta unos 40 cm.' : 'Un poco lejos: acercá el celular hasta unos 40 cm.');
+}
+
+/* ---------- eye cover ---------- */
+function eyesArt(eye) {
+  const eyeAt = (x, covered, on, label) => {
+    let s = `<path class="ea-lid" d="M${x - 32} 40 Q${x} 14 ${x + 32} 40 Q${x} 66 ${x - 32} 40 Z"/>`;
+    s += `<circle class="ea-iris" cx="${x}" cy="40" r="11"/><circle class="ea-pupil" cx="${x}" cy="40" r="4.5"/>`;
+    if (covered) s += `<rect class="ea-palm" x="${x - 42}" y="8" width="84" height="64" rx="28"/>`;
+    s += `<text class="ea-label${on ? ' on' : ''}" x="${x}" y="92" text-anchor="middle">${label}</text>`;
+    return s;
+  };
+  // Vista tipo espejo: el ojo derecho aparece a la derecha.
+  const leftCovered = eye === 'OD';
+  return `<svg viewBox="0 0 240 100" role="img" aria-label="Ojo ${leftCovered ? 'izquierdo' : 'derecho'} tapado">` +
+    eyeAt(66, leftCovered, !leftCovered, leftCovered ? 'IZQ · TAPADO' : 'IZQUIERDO') +
+    eyeAt(174, !leftCovered, leftCovered, leftCovered ? 'DERECHO' : 'DER · TAPADO') + '</svg>';
+}
+function setCover(prefix, eye) {
+  $('#' + prefix + 'EyeName').textContent = eye === 'OD' ? 'Ojo derecho (OD)' : 'Ojo izquierdo (OI)';
+  $('#' + prefix + 'EyeHow').textContent = `Tapate el ojo ${eye === 'OD' ? 'izquierdo' : 'derecho'} con la palma de la mano, sin apretar. Dejá los dos ojos abiertos detrás de la mano.`;
+  $('#' + prefix + 'EyeArt').innerHTML = eyesArt(eye);
+}
+
+/* ---------- acuity ---------- */
+$$('#acPad button[data-dir]').forEach(b => { if (ROT[b.dataset.dir] != null) b.innerHTML = `<svg viewBox="0 0 5 5" aria-hidden="true">${eShape(ROT[b.dataset.dir])}</svg>`; });
+function acuityCover(eye) {
+  A = null;
+  setCover('ac', eye);
+  $('#acCover').hidden = false; $('#acTest').hidden = true;
+  $('#acStart').onclick = () => startAcuity(eye);
+  window.scrollTo(0, 0);
+}
+function startAcuity(eye) {
+  setIrisSel(eye);
+  A = { eye, lv: 6, c: 0, w: 0, best: null, failed: new Set(), cur: null, last: null, n: 0, dist: [], limited: false, shownPx: 0, locked: false };
+  $('#acCover').hidden = true; $('#acTest').hidden = false;
+  $('#acEye').textContent = eye;
+  wake(true);
+  nextE();
+}
+function eHeightPx(lv, cm) { const rad = (5 * Math.pow(10, lv / 10)) / 60 * Math.PI / 180; return 2 * cm * 10 * Math.tan(rad / 2) * pxPerMm; }
+function displayable(lv, cm) { return eHeightPx(lv, cm) * (window.devicePixelRatio || 1) >= 5; }
+function nextE() {
+  let d; do { d = DIRS[Math.random() * 4 | 0]; } while (d === A.last);
+  A.cur = A.last = d; A.n++;
+  $('#eGroup').setAttribute('transform', `rotate(${ROT[d]} 2.5 2.5)`);
+  $('#acCount').textContent = 'Figura ' + A.n;
+  sizeE(true);
+  $('#eSvg').style.visibility = 'visible';
+}
+function pauseReason(cm) {
+  if (S.distMode !== 'camera') return '';
+  if (cm == null) return 'No veo tu cara. Mirá la pantalla con buena luz de frente.';
+  if (cm < RANGE.min) return `Estás a ${Math.round(cm)} cm. Alejá un poco el celular.`;
+  if (cm > RANGE.max) return `Estás a ${Math.round(cm)} cm. Acercá un poco el celular.`;
+  return '';
+}
+function sizeE(force) {
+  if (!A) return;
+  const cm = currentCm();
+  const reason = pauseReason(cm);
+  $('#acPause').hidden = !reason;
+  if (reason) { $('#acPauseText').textContent = reason; return; }
+  const px = eHeightPx(A.lv, cm);
+  if (force || !A.shownPx || Math.abs(px - A.shownPx) / A.shownPx > 0.015) {
+    const svg = $('#eSvg'); svg.style.width = svg.style.height = px.toFixed(2) + 'px'; A.shownPx = px;
+  }
+  $('#acDist').textContent = fmtCm(cm) + (S.distMode === 'camera' && !faceOk() ? ' · última medida' : '');
+}
+function answerE(dir) {
+  if (!A || A.locked || !$('#acPause').hidden) return;
+  const cm = currentCm(); if (cm != null) A.dist.push(cm);
+  if (dir === A.cur) A.c++; else A.w++;
+  if (A.c >= 2) {
+    A.best = A.lv; A.c = A.w = 0;
+    const nxt = A.lv - 1;
+    if (A.lv <= -2 || A.failed.has(nxt)) return finishAcuity();
+    if (!displayable(nxt, cm || 40)) { A.limited = true; return finishAcuity(); }
+    A.lv = nxt;
+  } else if (A.w >= 2) {
+    A.failed.add(A.lv); A.c = A.w = 0;
+    if (A.best != null || A.lv >= 10) return finishAcuity();
+    A.lv += 1;
+  }
+  A.locked = true;
+  $('#eSvg').style.visibility = 'hidden';
+  setTimeout(() => { if (!A) return; A.locked = false; nextE(); }, 220);
+}
+function finishAcuity() {
+  const eye = A.eye;
+  S.acuity[eye] = { lv: A.best, distCm: A.dist.length ? median(A.dist) : currentCm(), trials: A.n, limited: A.limited, mode: S.distMode };
+  A = null;
+  toast(eye === 'OD' ? 'Ojo derecho listo' : 'Ojo izquierdo listo');
+  if (eye === 'OD') acuityCover('OI'); else go('amsler');
+}
+$('#acPad').addEventListener('click', e => { const b = e.target.closest('button'); if (b) answerE(b.dataset.dir); });
+let swipe = null;
+$('#acChart').addEventListener('pointerdown', e => { swipe = { x: e.clientX, y: e.clientY }; });
+$('#acChart').addEventListener('pointerup', e => {
+  if (!swipe) return;
+  const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y; swipe = null;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 30) return;
+  answerE(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+});
+document.addEventListener('keydown', e => {
+  if (S.screen !== 'acuity' || !A) return;
+  const k = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[e.key];
+  if (k) { e.preventDefault(); answerE(k); }
+});
+
+/* ---------- Amsler ---------- */
+function amslerCover(eye) {
+  M = null;
+  setCover('am', eye);
+  $('#amCover').hidden = false; $('#amTest').hidden = true;
+  $('#amStart').onclick = () => startAmsler(eye);
+  window.scrollTo(0, 0);
+}
+function startAmsler(eye) {
+  setIrisSel(eye);
+  $('#amCover').hidden = true; $('#amTest').hidden = false;
+  const cm = currentCm() || 33;
+  const avail = $('#amWrap').clientWidth - 24;
+  let cell = 2 * cm * 10 * Math.tan(0.5 * Math.PI / 180) * pxPerMm;
+  let N = 10; while (N > 6 && N * cell > avail) N -= 2;
+  let scaled = false; if (N * cell > avail) { cell = avail / N; scaled = true; }
+  M = { eye, N, cell, cm, scaled, marked: new Set() };
+  drawAmsler();
+}
+function drawAmsler() {
+  const { N, cell, marked } = M;
+  const size = (N * cell).toFixed(1);
+  let s = `<svg viewBox="0 0 ${N} ${N}" width="${size}" height="${size}" role="img" aria-label="Rejilla de Amsler"><rect class="am-bg" x="0" y="0" width="${N}" height="${N}"/>`;
+  marked.forEach(k => { const [i, j] = k.split(',').map(Number); s += `<rect class="am-mark" x="${i}" y="${j}" width="1" height="1"/>`; });
+  for (let k = 0; k <= N; k++) s += `<line class="am-line" x1="${k}" y1="0" x2="${k}" y2="${N}"/><line class="am-line" x1="0" y1="${k}" x2="${N}" y2="${k}"/>`;
+  s += `<circle class="am-dot" cx="${N / 2}" cy="${N / 2}" r="0.17"/></svg>`;
+  $('#amWrap').innerHTML = s;
+  const n = marked.size;
+  $('#amCount').textContent = n ? `${n} ${n === 1 ? 'zona marcada' : 'zonas marcadas'}` : 'Sin marcas';
+  $('#amDone').textContent = n ? 'Listo, marqué las zonas' : 'Todas las líneas se ven rectas';
+}
+$('#amWrap').addEventListener('click', e => {
+  const svg = e.target.closest('svg'); if (!svg || !M) return;
+  const r = svg.getBoundingClientRect();
+  const i = Math.floor((e.clientX - r.left) / r.width * M.N), j = Math.floor((e.clientY - r.top) / r.height * M.N);
+  if (i < 0 || j < 0 || i >= M.N || j >= M.N) return;
+  const k = i + ',' + j;
+  if (M.marked.has(k)) M.marked.delete(k); else M.marked.add(k);
+  drawAmsler();
+});
+$('#amClear').addEventListener('click', () => { if (M) { M.marked.clear(); drawAmsler(); } });
+$('#amDone').addEventListener('click', () => {
+  if (!M) return;
+  const eye = M.eye;
+  S.amsler[eye] = { N: M.N, cm: M.cm, scaled: M.scaled, marked: [...M.marked] };
+  M = null;
+  if (eye === 'OD') amslerCover('OI'); else go('far');
+});
+function amslerZones(eye, m) {
+  const c = m.N / 2, set = new Set();
+  m.marked.forEach(k => {
+    const [i, j] = k.split(',').map(Number);
+    const x = i + 0.5 - c, y = j + 0.5 - c;
+    if (Math.abs(x) <= 1.5 && Math.abs(y) <= 1.5) { set.add('central'); return; }
+    const v = y < 0 ? 'superior' : 'inferior';
+    // Mitad izquierda de la rejilla = campo visual izquierdo: nasal en OD, temporal en OI.
+    const h = (eye === 'OD') === (x < 0) ? 'nasal' : 'temporal';
+    set.add(v + ' ' + h);
+  });
+  return [...set].join(', ');
+}
+
+/* ---------- far point ---------- */
+function enterFar() {
+  F = null;
+  $('#farIntro').hidden = false; $('#farCover').hidden = true; $('#farTest').hidden = true;
+  $('#farGlasses').hidden = !S.wearingNow;
+}
+$('#farDo').addEventListener('click', () => farCover('OD'));
+$('#farSkip').addEventListener('click', () => { S.far.skipped = true; go('report'); });
+function farCover(eye) {
+  F = null;
+  setCover('fa', eye);
+  $('#farIntro').hidden = true; $('#farCover').hidden = false; $('#farTest').hidden = true;
+  $('#faStart').onclick = () => startFar(eye);
+  window.scrollTo(0, 0);
+}
+function startFar(eye) {
+  setIrisSel(eye);
+  F = { eye, shownPx: 0, lastCm: null };
+  $('#farCover').hidden = true; $('#farTest').hidden = false;
+  let g = '', last = null;
+  for (let k = 0; k < 5; k++) { let d; do { d = DIRS[Math.random() * 4 | 0]; } while (d === last); last = d; g += `<g transform="translate(${k * 10} 0)">${eShape(ROT[d])}</g>`; }
+  $('#farSvg').innerHTML = g;
+  wake(true);
+  sizeFar(true);
+}
+function sizeFar(force) {
+  if (!F) return;
+  const cam = S.distMode === 'camera' && Cam.on;
+  const live = cam && faceOk() ? Cam.cm : null;
+  if (live) F.lastCm = live;
+  if (cam) $('#farLive').textContent = live ? fmtCm(live) : 'sin rostro';
+  const cm = cam ? (live || F.lastCm || 40) : 40;
+  const h = eHeightPx(1, cm);
+  if (force || !F.shownPx || Math.abs(h - F.shownPx) / F.shownPx > 0.015) {
+    const svg = $('#farSvg'); svg.style.height = h.toFixed(2) + 'px'; svg.style.width = (h * 9).toFixed(2) + 'px'; F.shownPx = h;
+  }
+}
+function recordFar(cm, kind) {
+  const eye = F.eye;
+  let r;
+  if (kind === 'sharp') r = { cm: cm || null, D: null, note: 'sharp' };
+  else { const D = quarter(-100 / cm); r = { cm, D: D === 0 ? 0 : D, note: cm < 15 ? 'high' : (cm > 65 ? 'low' : '') }; }
+  S.far[eye] = r;
+  F = null;
+  toast(eye === 'OD' ? 'Ojo derecho listo' : 'Ojo izquierdo listo');
+  if (eye === 'OD') farCover('OI'); else go('report');
+}
+$('#farBlur').addEventListener('click', () => {
+  const cm = faceOk() ? Cam.cm : (F && F.lastCm);
+  if (!cm) { toast('No te veo: mirá a la cámara y probá de nuevo'); return; }
+  recordFar(cm, 'blur');
+});
+$('#farSharp').addEventListener('click', () => recordFar(faceOk() ? Cam.cm : (F && F.lastCm), 'sharp'));
+
+/* ---------- report ---------- */
+function meta() {
+  return S.example
+    ? { px: 6.12, pxCal: true, mode: 'camera', camCal: true, manualCm: 40 }
+    : { px: pxPerMm, pxCal: pxCalibrated, mode: S.distMode, camCal: Cam.fCalibrated, manualCm: S.manualCm };
+}
+function analyze() {
+  const out = [], a = S.acuity;
+  ['OD', 'OI'].forEach(e => {
+    const r = a[e]; if (!r) return;
+    if (r.lv == null) out.push({ sev: 'alert', t: `Ojo ${eyeWord(e)}: no llegó a leer la E más grande`, d: 'Agudeza de cerca peor que 1,0 logMAR. Conviene una consulta pronto.' });
+    else if (r.lv >= 4) out.push({ sev: 'alert', t: `Ojo ${eyeWord(e)}: agudeza de cerca baja (20/${fmtSn(SNELLEN[r.lv])})`, d: 'Equivale a 20/50 o peor. Conviene una consulta pronto.' });
+    else if (r.lv === 3) out.push({ sev: 'warn', t: `Ojo ${eyeWord(e)}: agudeza de cerca reducida (20/40)`, d: 'Conviene revisarlo en la próxima consulta.' });
+  });
+  if (a.OD && a.OI) {
+    const lv = r => r.lv == null ? 11 : r.lv;
+    const diff = Math.abs(lv(a.OD) - lv(a.OI));
+    if (diff >= 2) out.push({ sev: 'warn', t: `Diferencia de ${diff} líneas entre los dos ojos`, d: 'Una diferencia de 2 líneas o más merece revisión.' });
+  }
+  if (S.age >= 40 && !S.wearingNow && ['OD', 'OI'].some(e => a[e] && (a[e].lv == null || a[e].lv >= 3)))
+    out.push({ sev: 'info', t: 'Compatible con presbicia', d: `Por la edad (${S.age} años) y la visión de cerca sin anteojos, puede necesitar corrección para leer.` });
+  ['OD', 'OI'].forEach(e => {
+    const m = S.amsler[e];
+    if (m && m.marked.length) out.push({ sev: 'alert', t: `Rejilla de Amsler alterada en el ojo ${eyeWord(e)}`, d: `${m.marked.length} ${m.marked.length === 1 ? 'zona' : 'zonas'} (${amslerZones(e, m)}). Si es un cambio nuevo, conviene consultar en pocos días.` });
+  });
+  ['OD', 'OI'].forEach(e => {
+    const f = S.far[e];
+    if (f && f.D != null && f.D <= -0.5) out.push({ sev: 'info', t: `Miopía estimada en el ojo ${eyeWord(e)}: ${fmtD(f.D)}`, d: 'Estimación por punto lejano. Hay que confirmarla con una refracción en el consultorio.' });
+  });
+  if (!out.length) out.push({ sev: 'ok', t: 'Sin hallazgos para revisar en estos tests', d: 'Igual conviene un control oftalmológico periódico: muchas enfermedades no dan síntomas al principio.' });
+  const order = { alert: 0, warn: 1, info: 2, ok: 3 };
+  return out.sort((x, y) => order[x.sev] - order[y.sev]);
+}
+const cells = {
+  acu: (e) => { const r = S.acuity[e]; if (!r) return '<span class="dim">—</span>'; if (r.lv == null) return '&gt;1,0<small>logMAR</small>'; return `${fmtLog(r.lv)}<small>logMAR${r.limited ? ' · tope de pantalla' : ''}</small>`; },
+  sn: (e) => { const r = S.acuity[e]; if (!r) return '<span class="dim">—</span>'; if (r.lv == null) return 'peor que 20/200'; return `20/${fmtSn(SNELLEN[r.lv])}<small>decimal ${DEC[r.lv]}</small>`; },
+  dist: (e) => { const r = S.acuity[e]; return r && r.distCm ? fmtCm(r.distCm) : '<span class="dim">—</span>'; },
+  ams: (e) => { const m = S.amsler[e]; if (!m) return '<span class="dim">—</span>'; return m.marked.length ? `<span class="t-alert">${m.marked.length} ${m.marked.length === 1 ? 'zona' : 'zonas'}</span><small>${amslerZones(e, m)}</small>` : 'Normal'; },
+  far: (e) => { const f = S.far[e]; if (!f) return S.far.skipped ? '<span class="dim">No realizado</span>' : '<span class="dim">—</span>'; if (f.note === 'sharp') return 'Más allá del brazo'; return fmtCm(f.cm); },
+  se: (e) => { const f = S.far[e]; if (!f) return '<span class="dim">—</span>'; if (f.note === 'sharp') return 'Sin miopía detectable<small>menor a −1,50 D</small>'; return fmtD(f.D) + (f.note === 'high' ? '<small>fuera de rango confiable</small>' : f.note === 'low' ? '<small>poco confiable</small>' : '<small>equivalente esférico</small>'); }
+};
+const ROWS = [['Agudeza de cerca', 'acu'], ['Equivalente', 'sn'], ['Distancia de prueba', 'dist'], ['Amsler', 'ams'], ['Punto lejano', 'far'], ['Graduación estimada', 'se']];
+function miniMap(m) {
+  const N = m.N;
+  let s = `<svg viewBox="0 0 ${N} ${N}" role="img" aria-label="Rejilla con ${m.marked.length} zonas marcadas"><rect class="am-bg" width="${N}" height="${N}"/>`;
+  m.marked.forEach(k => { const [i, j] = k.split(',').map(Number); s += `<rect class="am-mark" x="${i}" y="${j}" width="1" height="1"/>`; });
+  for (let k = 1; k < N; k++) s += `<line class="am-line" style="opacity:.45" x1="${k}" y1="0" x2="${k}" y2="${N}"/><line class="am-line" style="opacity:.45" x1="0" y1="${k}" x2="${N}" y2="${k}"/>`;
+  return s + `<circle class="am-dot" cx="${N / 2}" cy="${N / 2}" r="0.22"/></svg>`;
+}
+function renderReport() {
+  $('#exampleBanner').hidden = !S.example;
+  $('#againBtn').textContent = S.example ? 'Hacer mi propio chequeo' : 'Empezar de nuevo';
+  $('#repDate').textContent = S.date.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' }) + ' · ' + S.date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  $('#repWho').textContent = `Edad: ${S.age != null ? S.age + ' años' : 'no informada'} · ${S.wearingNow ? 'con anteojos o lentes puestos' : 'sin corrección'} · sin signos de alarma`;
+  $('#repFindings').innerHTML = analyze().map(f => `<li class="finding"><span class="chip ${f.sev}">${SEV_LABEL[f.sev]}</span><span><b>${f.t}</b><span class="d">${f.d}</span></span></li>`).join('');
+  let t = '<div class="h"></div><div class="h">OD<small>derecho</small></div><div class="h">OI<small>izquierdo</small></div>';
+  ROWS.forEach(([label, key]) => { t += `<div class="k">${label}</div><div class="v">${cells[key]('OD')}</div><div class="v">${cells[key]('OI')}</div>`; });
+  $('#repTable').innerHTML = t;
+  $('#repMaps').innerHTML = ['OD', 'OI'].map(e => {
+    const m = S.amsler[e];
+    return m ? `<figure>${miniMap(m)}<figcaption>${e} · ${m.N}°×${m.N}° central</figcaption></figure>` : `<figure><p class="hint">${e}: no realizado</p></figure>`;
+  }).join('');
+  const mt = meta();
+  const anyAms = S.amsler.OD || S.amsler.OI;
+  const rows = [
+    ['Pantalla', `${fmtNum(mt.px, 2)} px/mm · ${mt.pxCal ? 'calibrada con tarjeta' : 'sin calibrar'}`],
+    ['Distancia', 'Cámara frontal, por diámetro del iris (11,7 mm), medida en cada figura'],
+    ['Optotipo', 'E giratoria, 2 de 3 aciertos por nivel, pasos de 0,1 logMAR'],
+    ['Amsler', anyAms ? `Rejilla central de ${anyAms.N}°×${anyAms.N}°${anyAms.scaled ? ', reducida para entrar en pantalla' : ''}` : 'No realizado'],
+    ['Punto lejano', S.far.skipped ? 'No realizado' : 'E de tamaño 20/25 a la distancia medida']
+  ];
+  $('#repMethod').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+  $('#reportTa').hidden = true;
+}
+function plain(html) { const d = document.createElement('div'); d.innerHTML = html.replace(/<small>/g, ' (').replace(/<\/small>/g, ')'); return d.textContent.replace(/\s+/g, ' ').trim(); }
+function reportText() {
+  const L = [];
+  L.push('VISUS · Informe de chequeo visual (prototipo)');
+  if (S.example) L.push('EJEMPLO CON DATOS FICTICIOS');
+  L.push($('#repDate').textContent);
+  L.push($('#repWho').textContent);
+  L.push('');
+  L.push('PARA REVISAR');
+  analyze().forEach(f => L.push(`- [${SEV_LABEL[f.sev]}] ${f.t}. ${f.d}`));
+  L.push('');
+  L.push('RESULTADOS POR OJO');
+  ROWS.forEach(([label, key]) => L.push(`${label}: OD ${plain(cells[key]('OD'))} | OI ${plain(cells[key]('OI'))}`));
+  L.push('');
+  L.push('CÓMO SE MIDIÓ');
+  $$('#repMethod dt').forEach(dt => L.push(`${dt.textContent}: ${dt.nextElementSibling.textContent}`));
+  L.push('');
+  L.push('Resultado orientativo de un prototipo. No es un diagnóstico ni una receta.');
+  return L.join('\n');
+}
+$('#copyBtn').addEventListener('click', () => {
+  const text = reportText(); const ta = $('#reportTa'); ta.value = text;
+  const fallback = () => { ta.hidden = false; ta.focus(); ta.select(); toast('Seleccioné el texto: copialo con el menú'); };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => toast('Informe copiado'), fallback);
+    else fallback();
+  } catch (e) { fallback(); }
+});
+$('#dlBtn').addEventListener('click', async () => {
+  const text = reportText();
+  const name = `informe-visus-${S.date.toISOString().slice(0, 10)}.txt`;
+  if (window.claude && typeof window.claude.use === 'function') {
+    let dl = null;
+    try { dl = await window.claude.use('downloads'); } catch (e) { dl = null; }
+    if (!dl) { $('#dlBtn').hidden = true; toast('Esta vista no permite descargar: usá Copiar'); return; }
+    try { await dl.save({ filename: name, data: text }); toast('Informe guardado'); }
+    catch (e) {
+      const code = e && e.code;
+      if (code === 'declined') return;
+      if (code === 'rate_limited') { toast('Esperá un momento y probá de nuevo'); return; }
+      toast('No se pudo guardar. Usá Copiar.');
+    }
+    return;
+  }
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+});
+$('#againBtn').addEventListener('click', () => resetAll(S.example));
+
+function resetAll(toTriage) {
+  S = freshState(); A = M = F = null;
+  $$('.yn button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  $('#age').value = ''; $('#qWearing').hidden = true;
+  updateTriage(); wake(false);
+  go(toTriage ? 'triage' : 'welcome');
+}
+$('#exampleBtn').addEventListener('click', () => {
+  S = freshState(); S.example = true;
+  S.triage = { sudden: false, pain: false, flashes: false, trauma: false };
+  S.age = 34; S.wears = true; S.wearingNow = false; S.distMode = 'camera';
+  S.acuity = { OD: { lv: 0, distCm: 41, trials: 13, limited: false, mode: 'camera' }, OI: { lv: 1, distCm: 39, trials: 12, limited: false, mode: 'camera' } };
+  S.amsler = { OD: { N: 10, cm: 38, scaled: false, marked: [] }, OI: { N: 10, cm: 37, scaled: false, marked: ['5,3', '6,3'] } };
+  S.far = { OD: { cm: 50, D: -2, note: '' }, OI: { cm: 44, D: -2.25, note: '' }, skipped: false };
+  go('report');
+});
+
+if (camBlocked) {
+  $('#embedNote').hidden = false;
+  $('section[data-screen="welcome"] [data-go="triage"]').disabled = true;
+}
+renderCard();
+go('welcome');
+})();
+</script>
+
+</body>
+</html>
