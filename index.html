@@ -480,13 +480,10 @@ textarea{width:100%;min-height:200px;font:.82rem/1.45 var(--f-mono);border:1.5px
         <ol class="steps">
           <li>En una compu, abrí esta dirección y calibrá la pantalla con una tarjeta.</li>
           <li>Acá, activá la cámara trasera y apuntá al patrón desde unos 50 cm.</li>
+          <li>Inclina el celular hacia los costados unos segundos: así la app mide el ángulo real de tu cámara, uses la lente que uses.</li>
           <li>Poné cada lente delante del círculo de puntos y movela despacio.</li>
         </ol>
         <div class="urlbox"><code id="patUrl"></code><button class="btn btn-ghost" id="patCopy">Copiar</button></div>
-        <p class="hint">Opcional, para más precisión: sacale una foto a cualquier cosa con la cámara trasera. Solo se lee el dato del lente de la cámara.</p>
-        <label class="btn btn-ghost" for="rearIn">Calibrar la cámara trasera con una foto</label>
-        <input type="file" id="rearIn" accept="image/*" capture="environment" hidden>
-        <p class="hint" id="rearState"></p>
         <button class="btn btn-primary" id="lensStart">Activar cámara trasera</button>
         <div class="note" id="lensErr" hidden><p id="lensErrText"></p><button class="btn btn-ghost" id="lensRetry" style="margin-top:10px">Reintentar</button></div>
         <button class="btn-quiet" data-go="welcome">Volver al inicio</button>
@@ -494,6 +491,11 @@ textarea{width:100%;min-height:200px;font:.82rem/1.45 var(--f-mono);border:1.5px
       <div id="lensCam" class="stack" hidden>
         <div class="camslot" id="lensslot"></div>
         <p class="note info" id="lensStatus">Buscando los cuatro cuadrados del patrón…</p>
+        <div class="stack" id="lensCalBox">
+          <p><strong>Primero, calibrá la cámara.</strong> Apuntando al patrón, inclina despacio el celular hacia un costado y después hacia el otro, como si miraras el patrón de reojo, unos 30°.</p>
+          <div class="meter"><i id="lensCalBar"></i></div>
+        </div>
+        <p class="hint" id="lensCalMsg" hidden></p>
         <div class="seg" id="lensSide"><button data-side="OD" aria-pressed="true">Lente derecha</button><button data-side="OI" aria-pressed="false">Lente izquierda</button></div>
         <p>Sostené el anteojo por una patilla, cerca de la bisagra, con las patillas hacia el celular y el marco derecho. Poné la lente elegida delante del círculo de puntos y tocá «Medir». Durante 8 segundos, movelo despacio desde la pantalla hasta el celular y de vuelta.</p>
         <div class="meter"><i id="lensBar"></i></div>
@@ -503,6 +505,7 @@ textarea{width:100%;min-height:200px;font:.82rem/1.45 var(--f-mono);border:1.5px
           <button class="btn btn-ghost" id="lensReport" hidden>Ver en el informe</button>
           <button class="btn-quiet" id="lensBack">Volver al inicio</button>
         </div>
+        <p class="fine mono" id="lensDiag"></p>
       </div>
     </section>
 
@@ -675,23 +678,17 @@ const VC = (() => {
     for (let i = 0, j = 0; i < N; i++, j += 4) { const y = (d[j] * 77 + d[j + 1] * 151 + d[j + 2] * 28) >> 8; g[i] = y; hist[y]++; }
     const t = otsu(hist, N);
     const blobs = label(g, W, H, t);
-    const sq = blobs.filter(b => !b.edge && b.a >= 40 && b.a < N * 0.03 && b.compact > 0.85 && b.elong < 1.6).sort((p, q) => q.a - p.a);
-    if (sq.length < 4) return { ok: false, reason: 'markers' };
-    const mk = sq.slice(0, 4);
-    if (mk[3].a < mk[0].a / 2.5) return { ok: false, reason: 'markers' };
-    const cx = mk.reduce((s, b) => s + b.cx, 0) / 4, cy = mk.reduce((s, b) => s + b.cy, 0) / 4;
-    mk.sort((p, q) => Math.atan2(p.cy - cy, p.cx - cx) - Math.atan2(q.cy - cy, q.cx - cx));
-    const L = (p, q) => Math.hypot(p.cx - q.cx, p.cy - q.cy);
-    const s01 = L(mk[0], mk[1]), s12 = L(mk[1], mk[2]), s23 = L(mk[2], mk[3]), s30 = L(mk[3], mk[0]);
-    const longFirst = (s01 + s23) > (s12 + s30);
-    const shortAvg = longFirst ? (s12 + s30) / 2 : (s01 + s23) / 2, longAvg = longFirst ? (s01 + s23) / 2 : (s12 + s30) / 2;
-    const want = PAT.long / PAT.short, ratio = longAvg / shortAvg;
-    if (ratio < want * 0.75 || ratio > want * 1.3) return { ok: false, reason: 'markers' };
+    const cand = blobs.filter(b => !b.edge && b.a >= 40 && b.a < N * 0.03 && b.compact > 0.85 && b.elong < 1.6).sort((p, q) => q.a - p.a).slice(0, 8);
+    const sel = pickMarkers(cand);
+    if (!sel) return { ok: false, reason: 'markers' };
+    const { mk, longFirst, shortAvg, longAvg } = sel;
     const dst = longFirst ? [PAT.mk[1], PAT.mk[2], PAT.mk[3], PAT.mk[0]] : PAT.mk;
     const Hm = homography(mk.map(b => [b.cx, b.cy]), dst);
     if (!Hm) return { ok: false, reason: 'markers' };
     const pxmm = (shortAvg / PAT.short + longAvg / PAT.long) / 2;
-    const Dmm = fProc / pxmm;
+    const cal = focalFromH(Hm, W / 2, H / 2);
+    const fEst = cal && cal.persp >= 0.035 && cal.tilt >= 12 && cal.normRatio < 1.1 ? cal.f : null;
+    const Dmm = fProc ? distFromH(Hm, W / 2, H / 2, fProc) : null;
     const mkSet = new Set(mk);
     const dotAexp = Math.PI * Math.pow(PAT.dotD / 2 * pxmm, 2);
     const pts = [], ipts = [];
@@ -703,15 +700,88 @@ const VC = (() => {
       if (r < 5 || r > 44 || Math.abs(P[1]) > PAT.mk[2][1] - 12) continue;
       pts.push(P); ipts.push([b.cx, b.cy]);
     }
-    const base = { ok: true, markers: mk.map(b => [b.cx, b.cy]), dots: ipts, Dmm, pxmm, H: Hm };
+    const base = { ok: true, markers: mk.map(b => [b.cx, b.cy]), dots: ipts, Dmm, pxmm, H: Hm, fEst, tilt: cal ? cal.tilt : null };
     if (pts.length < 7) return Object.assign(base, { fit: null, reason: 'dots' });
     let fit = fitEllipse(pts);
     if (fit) { const keep = pts.filter(p => Math.abs(ellRes(fit, p)) < 0.2); if (keep.length >= 7 && keep.length < pts.length) fit = fitEllipse(keep) || fit; }
     if (!fit || fit.rms > 0.06) return Object.assign(base, { fit: null, reason: 'fit' });
-    const M1 = fit.s1 / PAT.R, M2 = fit.s2 / PAT.R, Dm = Dmm / 1000;
-    const pw = M => (4 / Dm) * (1 - 1 / M);
+    const M1 = fit.s1 / PAT.R, M2 = fit.s2 / PAT.R;
     const phi1 = ((-fit.ang1 * 180 / Math.PI) % 180 + 180) % 180, phi2 = (phi1 + 90) % 180;
-    return Object.assign(base, { fit, M1, M2, Mbar: Math.sqrt(M1 * M2), dev: Math.abs(Math.log(Math.sqrt(M1 * M2))), P1: pw(M1), P2: pw(M2), phi1, phi2 });
+    const out = Object.assign(base, { fit, M1, M2, Mbar: Math.sqrt(M1 * M2), dev: Math.abs(Math.log(Math.sqrt(M1 * M2))), phi1, phi2 });
+    if (Dmm) { const pw = M => (4 / (Dmm / 1000)) * (1 - 1 / M); out.P1 = pw(M1); out.P2 = pw(M2); }
+    return out;
+  }
+
+  // Elige los 4 marcadores entre los blobs compactos más grandes: cuadrilátero convexo con la proporción del patrón
+  // y cuadrados del tamaño esperado para ese cuadrilátero.
+  function orderQuad(q) {
+    const cx = (q[0].cx + q[1].cx + q[2].cx + q[3].cx) / 4, cy = (q[0].cy + q[1].cy + q[2].cy + q[3].cy) / 4;
+    const s = q.slice().sort((p, r) => Math.atan2(p.cy - cy, p.cx - cx) - Math.atan2(r.cy - cy, r.cx - cx));
+    const L = (p, r) => Math.hypot(p.cx - r.cx, p.cy - r.cy);
+    const s01 = L(s[0], s[1]), s12 = L(s[1], s[2]), s23 = L(s[2], s[3]), s30 = L(s[3], s[0]);
+    let sgn = 0, convex = true;
+    for (let i = 0; i < 4; i++) {
+      const a = s[i], b = s[(i + 1) % 4], c = s[(i + 2) % 4];
+      const cr = Math.sign((b.cx - a.cx) * (c.cy - b.cy) - (b.cy - a.cy) * (c.cx - b.cx));
+      if (!sgn) sgn = cr; else if (cr !== sgn) convex = false;
+    }
+    const longFirst = (s01 + s23) > (s12 + s30);
+    return { mk: s, longFirst, convex, shortAvg: longFirst ? (s12 + s30) / 2 : (s01 + s23) / 2, longAvg: longFirst ? (s01 + s23) / 2 : (s12 + s30) / 2, opp: Math.max(s01 / s23, s23 / s01, s12 / s30, s30 / s12) };
+  }
+  function pickMarkers(cs) {
+    const want = PAT.long / PAT.short, n = cs.length; let best = null;
+    for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) for (let c = b + 1; c < n; c++) for (let d = c + 1; d < n; d++) {
+      const q = [cs[a], cs[b], cs[c], cs[d]];
+      const amax = Math.max(q[0].a, q[1].a, q[2].a, q[3].a), amin = Math.min(q[0].a, q[1].a, q[2].a, q[3].a);
+      if (amax / amin > 2.5) continue;
+      const o = orderQuad(q);
+      if (!o.convex || o.opp > 1.8) continue;
+      const ratio = o.longAvg / o.shortAvg;
+      if (ratio < want * 0.7 || ratio > want * 1.35) continue;
+      const expA = Math.pow(PAT.mkSize / PAT.short * o.shortAvg, 2);
+      if (amin < expA * 0.3 || amax > expA * 3) continue;
+      const score = Math.abs(Math.log(ratio / want)) + 0.3 * Math.log(amax / amin) + 0.2 * Math.log(o.opp);
+      if (!best || score < best.score) best = Object.assign(o, { score });
+    }
+    return best;
+  }
+
+  // Calibración de la cámara con una sola vista inclinada del patrón (cámara ideal: píxeles cuadrados,
+  // punto principal en el centro). Con H = K[r1 r2 t], r1 ⟂ r2 y |r1| = |r2| dan dos ecuaciones para 1/f².
+  function inv3(h) {
+    const [a, b, c, d, e, f, g, k, i] = h;
+    const A = e * i - f * k, B = -(d * i - f * g), C = d * k - e * g, det = a * A + b * B + c * C;
+    if (Math.abs(det) < 1e-18) return null;
+    return [A / det, (c * k - b * i) / det, (b * f - c * e) / det, B / det, (a * i - c * g) / det, (c * d - a * f) / det, C / det, (b * g - a * k) / det, (a * e - b * d) / det];
+  }
+  function camCols(Hi2m, cx, cy) {
+    const m = inv3(Hi2m); if (!m) return null;
+    const r0 = [m[0] - cx * m[6], m[1] - cx * m[7], m[2] - cx * m[8]];
+    const r1 = [m[3] - cy * m[6], m[4] - cy * m[7], m[5] - cy * m[8]];
+    return [0, 1, 2].map(j => [r0[j], r1[j], m[6 + j]]);
+  }
+  function focalFromH(Hi2m, cx, cy) {
+    const col = camCols(Hi2m, cx, cy); if (!col) return null;
+    const h1 = col[0], h2 = col[1];
+    const A1 = h1[0] * h2[0] + h1[1] * h2[1], B1 = h1[2] * h2[2];
+    const A2 = (h1[0] * h1[0] + h1[1] * h1[1]) - (h2[0] * h2[0] + h2[1] * h2[1]), B2 = h1[2] * h1[2] - h2[2] * h2[2];
+    const den = A1 * A1 + A2 * A2; if (!den) return null;
+    const u = -(A1 * B1 + A2 * B2) / den; if (!(u > 0)) return null;
+    const f = 1 / Math.sqrt(u);
+    const v1 = [h1[0] / f, h1[1] / f, h1[2]], v2 = [h2[0] / f, h2[1] / f, h2[2]];
+    const nx = v1[1] * v2[2] - v1[2] * v2[1], ny = v1[2] * v2[0] - v1[0] * v2[2], nz = v1[0] * v2[1] - v1[1] * v2[0];
+    const tilt = Math.acos(Math.min(1, Math.abs(nz) / Math.hypot(nx, ny, nz))) * 180 / Math.PI;
+    const n1 = Math.hypot(v1[0], v1[1], v1[2]), n2 = Math.hypot(v2[0], v2[1], v2[2]);
+    // Variación relativa de profundidad a lo largo del patrón (no depende de f): cerca de 0 = vista de frente, f no observable.
+    const persp = Math.hypot(h1[2], h2[2]) * 80 / Math.abs(col[2][2]);
+    return { f, tilt, persp, normRatio: Math.max(n1 / n2, n2 / n1) };
+  }
+  // Distancia de la cámara al centro del patrón (mm), descomponiendo la pose con la focal conocida.
+  function distFromH(Hi2m, cx, cy, f) {
+    const col = camCols(Hi2m, cx, cy); if (!col) return null;
+    const [h1, h2, h3] = col;
+    const n1 = Math.hypot(h1[0] / f, h1[1] / f, h1[2]), n2 = Math.hypot(h2[0] / f, h2[1] / f, h2[2]);
+    return (2 / (n1 + n2)) * Math.hypot(h3[0] / f, h3[1] / f, h3[2]);
   }
 
   const q4 = x => { const v = Math.round(x * 4) / 4; return v === 0 ? 0 : v; };
@@ -761,7 +831,7 @@ const VC = (() => {
     return null;
   }
 
-  return { PAT, otsu, label, solve, homography, applyH, fitEllipse, analyzePattern, rxFromMeridians, lensFromFrames, exifF35, tabo, q4 };
+  return { PAT, otsu, label, solve, homography, applyH, fitEllipse, analyzePattern, focalFromH, distFromH, rxFromMeridians, lensFromFrames, exifF35, tabo, q4 };
 })();
 /*VC-END*/
 
@@ -797,7 +867,7 @@ let pxPerMm = store.get('pxPerMm') || (coarse ? 6.3 : 3.78);
 let pxCalibrated = !!store.get('pxPerMm');
 let A = null, M = null, F = null;
 let LensRes = { OD: null, OI: null };
-const Lens = { side: 'OD', recording: false, frames: [], t0: 0, last: null, lastOkT: 0, canvas: null, ctx: null };
+const Lens = { side: 'OD', recording: false, frames: [], t0: 0, last: null, lastOkT: 0, canvas: null, ctx: null, label: '', kind: 'main', fNorm: null, fs: [], W: 0, H: 0, PW: 0, PH: 0 };
 let greenColor = '#24875A', accentColor = '#145F6D';
 
 /* ---------- helpers ---------- */
@@ -925,8 +995,6 @@ async function calibrateFromPhoto(file, which) {
 function renderFState() {
   const f = store.get('f35front');
   $('#fState').textContent = f ? `Cámara calibrada: lente equivalente a ${f} mm.` : 'Sin calibrar: se usa una estimación estándar del ángulo de la cámara.';
-  const r = store.get('f35rear');
-  $('#rearState').textContent = r ? `Cámara trasera calibrada: lente equivalente a ${r} mm.` : 'Sin calibrar: se usa una estimación estándar.';
 }
 async function onPhoto(input, which) {
   const file = input.files && input.files[0]; input.value = '';
@@ -940,7 +1008,6 @@ async function onPhoto(input, which) {
   updatePrecision();
 }
 $('#selfieIn').addEventListener('change', e => onPhoto(e.target, 'front'));
-$('#rearIn').addEventListener('change', e => onPhoto(e.target, 'rear'));
 
 /* ---------- distance ---------- */
 function enterDistance() {
@@ -1006,7 +1073,7 @@ async function startCamera(mode) {
     : { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false };
   try {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('unsupported');
-    Cam.stream = await navigator.mediaDevices.getUserMedia(constraints);
+    Cam.stream = mode === 'rear' ? await openRear() : await navigator.mediaDevices.getUserMedia(constraints);
   } catch (e) { Cam.starting = false; camUnavailable(window.isSecureContext === false ? 'insecure' : ((e && e.name) || 'camera'), mode); return; }
   Cam.mode = mode; Cam.f = null; Cam.samples = []; Cam.lastVideoTime = -1;
   const v = $('#video');
@@ -1024,6 +1091,7 @@ async function startCamera(mode) {
     requestAnimationFrame(frontLoop);
   } else {
     $('#lensIntro').hidden = true; $('#lensCam').hidden = false;
+    initRearInfo();
     requestAnimationFrame(rearLoop);
   }
   positionCam();
@@ -1531,17 +1599,19 @@ function rearLoop() {
   const v = $('#video'); if (v.readyState < 2 || !v.videoWidth) return;
   const now = performance.now(); if (now - (rearLoop.t || 0) < 70) return; rearLoop.t = now;
   const W = v.videoWidth, H = v.videoHeight;
-  if (!Cam.f || Cam.fW !== W) { const r = focalFor(W, H, 'rear'); Cam.f = r.f; Cam.fSource = r.src; Cam.fW = W; }
   const PW = Math.min(1280, W), PH = Math.round(H * PW / W);
   if (!Lens.canvas) { Lens.canvas = document.createElement('canvas'); Lens.ctx = Lens.canvas.getContext('2d', { willReadFrequently: true }); }
-  if (Lens.canvas.width !== PW) { Lens.canvas.width = PW; Lens.canvas.height = PH; }
+  if (Lens.canvas.width !== PW || Lens.canvas.height !== PH) { Lens.canvas.width = PW; Lens.canvas.height = PH; }
   Lens.ctx.drawImage(v, 0, 0, PW, PH);
+  Lens.W = W; Lens.H = H; Lens.PW = PW; Lens.PH = PH;
+  const fProc = Lens.fNorm ? Lens.fNorm * PW : rearFallbackF(PW, PH, Lens.kind);
   let r;
-  try { r = VC.analyzePattern(Lens.ctx.getImageData(0, 0, PW, PH), Cam.f * PW / W); } catch (e) { r = { ok: false, reason: 'error' }; }
+  try { r = VC.analyzePattern(Lens.ctx.getImageData(0, 0, PW, PH), fProc); } catch (e) { r = { ok: false, reason: 'error' }; }
   Lens.last = r;
   if (r.ok && r.fit) Lens.lastOkT = now;
+  if (r.ok && r.fEst && !Lens.recording) collectFocal(r.fEst / PW);
   if (Lens.recording) {
-    if (r.ok && r.fit && r.Dmm > 250 && r.Dmm < 1000) Lens.frames.push(r);
+    if (r.ok && r.fit && r.P1 != null && r.Dmm > 250 && r.Dmm < 1000) Lens.frames.push(r);
     const p = Math.min(1, (now - Lens.t0) / 8000);
     $('#lensBar').style.width = (p * 100) + '%';
     if (p >= 1) finishLens();
@@ -1549,10 +1619,77 @@ function rearLoop() {
   drawLensOverlay(r, PW, PH);
   updateLensStatus(r);
 }
+/* Cámara trasera: en iPhone Pro, Safari puede abrir el teleobjetivo, el gran angular o una cámara virtual que
+   cambia de lente sola. Se pasa a la principal si existe, y la focal se mide igual con el patrón inclinado. */
+function lensKind(label) {
+  const l = (label || '').toLowerCase();
+  if (/tele/.test(l)) return 'tele';
+  if (/ultra/.test(l)) return 'ultra';
+  if (/dual|triple/.test(l)) return 'virtual';
+  if (/front|frontal|delantera/.test(l)) return 'front';
+  return 'main';
+}
+const KIND_F35 = { main: 26, ultra: 13, virtual: 13, tele: 77, front: 26 };
+const KIND_NAME = { tele: 'el teleobjetivo', ultra: 'el gran angular', virtual: 'una cámara múltiple que cambia de lente sola' };
+function rearFallbackF(W, H, kind) { const f35 = KIND_F35[kind] || 26, L = Math.max(W, H); return (L / 2) / ((43.27 / (2 * f35)) * (L / Math.hypot(W, H))); }
+async function openRear() {
+  const gum = c => navigator.mediaDevices.getUserMedia(c);
+  let s;
+  try { s = await gum({ video: { facingMode: { exact: 'environment' } }, audio: false }); }
+  catch (e) { if (e && e.name === 'NotAllowedError') throw e; s = await gum({ video: { facingMode: 'environment' }, audio: false }); }
+  let pick = null;
+  try {
+    const cur = s.getVideoTracks()[0];
+    if (lensKind(cur.label) !== 'main') {
+      const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+      pick = devs.find(d => /back|rear|posterior|trasera|environment/i.test(d.label) && lensKind(d.label) === 'main') || null;
+    }
+  } catch (e) { pick = null; }
+  if (pick) {
+    s.getTracks().forEach(t => t.stop());
+    try { return await gum({ video: { deviceId: { exact: pick.deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); }
+    catch (e) { s = await gum({ video: { facingMode: 'environment' }, audio: false }); }
+  }
+  try { await s.getVideoTracks()[0].applyConstraints({ width: { ideal: 1920 }, height: { ideal: 1080 } }); } catch (e) {}
+  return s;
+}
+function initRearInfo() {
+  const tr = Cam.stream && Cam.stream.getVideoTracks()[0];
+  Lens.label = (tr && tr.label) || '';
+  Lens.kind = lensKind(Lens.label);
+  Lens.fNorm = store.get('fcal:' + Lens.label) || null;
+  Lens.fs = []; Lens.calRendered = false;
+  renderLensCal();
+}
+function collectFocal(fn) {
+  Lens.fs.push(fn); if (Lens.fs.length > 40) Lens.fs.shift();
+  if (!Lens.fNorm) $('#lensCalBar').style.width = Math.min(100, Lens.fs.length / 15 * 100) + '%';
+  if (Lens.fs.length < 15) return;
+  const s = Lens.fs.slice().sort((a, b) => a - b), m = median(s);
+  const spread = (s[Math.floor(s.length * 0.75)] - s[Math.floor(s.length * 0.25)]) / m;
+  if (spread > 0.06) return;
+  const first = !Lens.fNorm;
+  Lens.fNorm = m; store.set('fcal:' + Lens.label, m);
+  if (first) { renderLensCal(); Lens.calRendered = true; toast('Cámara calibrada'); }
+}
+function lensF35() { if (!Lens.fNorm || !Lens.PW) return null; return Math.round(Lens.fNorm * Lens.PW * 43.27 / Math.hypot(Lens.PW, Lens.PH)); }
+function renderLensCal() {
+  const done = !!Lens.fNorm;
+  $('#lensCalBox').hidden = done;
+  const msg = $('#lensCalMsg');
+  msg.hidden = !done;
+  if (done) {
+    const f35 = lensF35();
+    msg.textContent = `Cámara calibrada${f35 ? `: equivale a un lente de ${f35} mm` : ''}.` + (KIND_NAME[Lens.kind] ? ` El navegador está usando ${KIND_NAME[Lens.kind]}; la calibración lo compensa.` : '');
+  }
+}
 function updateLensStatus(r) {
   const st = $('#lensStatus');
   let msg, cls = 'note info';
+  if (Lens.PW) $('#lensDiag').textContent = `${Lens.label || 'Cámara trasera'} · ${Lens.W}×${Lens.H}` + (Lens.fNorm ? ` · ${lensF35()} mm equiv.` : ` · sin calibrar (${Lens.fs.length}/15)`) + (r.ok && r.Dmm ? ` · ${Math.round(r.Dmm / 10)} cm` : '');
+  if (Lens.fNorm && !Lens.calRendered && Lens.PW) { renderLensCal(); Lens.calRendered = true; }
   if (!r.ok) msg = 'Buscando los cuatro cuadrados del patrón. Apuntá a la pantalla de la compu desde unos 50 cm, con el patrón entero a la vista.';
+  else if (!Lens.fNorm) msg = r.fEst ? 'Bien, seguí inclinándolo hacia un lado y hacia el otro hasta que se llene la barra.' : 'Patrón encontrado. Ahora inclina el celular hacia un costado, como si miraras el patrón de reojo (unos 30°), y después hacia el otro.';
   else {
     const cm = Math.round(r.Dmm / 10);
     if (cm < 35) msg = `Estás a ${cm} cm de la pantalla: alejate un poco (ideal, 45 a 60 cm).`;
@@ -1562,7 +1699,7 @@ function updateLensStatus(r) {
     else msg = `A ${cm} cm de la pantalla · aumento ${fmtNum(r.Mbar, 2)} ${r.Mbar < 1 ? '(achica: lente negativa)' : '(agranda: lente positiva)'}.`;
   }
   st.textContent = msg; st.className = cls;
-  if (!Lens.recording) $('#lensRec').disabled = !(r.ok && r.Dmm > 250 && r.Dmm < 1000);
+  if (!Lens.recording) $('#lensRec').disabled = !(Lens.fNorm && r.ok && r.Dmm > 250 && r.Dmm < 1000);
 }
 function drawLensOverlay(r, PW, PH) {
   const c = $('#overlay');

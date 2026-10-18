@@ -23,7 +23,9 @@ Prototipo de chequeo visual guiado desde el celular. La persona hace los tests e
 
 En una compu se abre `…/visus/#patron`, se calibra la pantalla con una tarjeta y se muestra un patrón: cuatro cuadrados de referencia y un anillo de 12 puntos. El celular, con la cámara trasera a unos 50 cm, detecta los cuadrados, corrige la perspectiva con una homografía y ajusta una elipse a los puntos vistos a través de la lente. El aumento en cada eje da la potencia por meridiano con `P = (4 / D) · (1 − 1 / M)`, tomando los cuadros de máximo aumento, que corresponden a la lente a mitad de camino. Devuelve esfera, cilindro y eje.
 
-En pruebas con imágenes sintéticas recupera la graduación exacta (por ejemplo −4,25 −1,25 × 20) con el celular girado o apaisado. Falta validarlo con anteojos reales.
+**Cámara trasera en iPhone Pro.** Safari puede abrir el teleobjetivo, el gran angular o una cámara virtual que cambia de lente sola. La app pasa a la cámara principal cuando el navegador la ofrece y, además, mide la focal real de la lente activa con el mismo patrón: con el celular inclinado, la perspectiva de los cuatro cuadrados da `f` (las restricciones r1 ⟂ r2 y |r1| = |r2| de la homografía). Después, la distancia a la pantalla sale de la pose. La calibración queda guardada por cámara.
+
+En pruebas con imágenes sintéticas en perspectiva recupera la focal de lentes de 13, 26 y 77 mm con error menor al 2 %, y la graduación exacta (por ejemplo −4,25 −1,25 × 20) con el celular girado o apaisado. Falta validarlo con anteojos reales.
 
 ## Cómo funciona
 
