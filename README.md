@@ -21,11 +21,21 @@ Prototipo de chequeo visual guiado desde el celular. La persona hace los tests e
 
 ## Medición de anteojos
 
-En una compu se abre `…/visus/#patron`, se calibra la pantalla con una tarjeta y se muestra un patrón: cuatro cuadrados de referencia y un anillo de 12 puntos. El celular, con la cámara trasera a unos 50 cm, detecta los cuadrados, corrige la perspectiva con una homografía y ajusta una elipse a los puntos vistos a través de la lente. El aumento en cada eje da la potencia por meridiano con `P = (4 / D) · (1 − 1 / M)`, tomando los cuadros de máximo aumento, que corresponden a la lente a mitad de camino. Devuelve esfera, cilindro y eje.
+En una compu se abre `…/visus/#patron`, se calibra la pantalla con una tarjeta (hay que confirmarlo para avanzar) y se muestra un patrón: cuatro cuadrados de referencia y un anillo de 12 puntos, más un recuadro de control del tamaño de una tarjeta. El celular, con la cámara trasera a unos 50 cm, detecta los cuadrados, corrige la perspectiva con una homografía y ajusta una elipse a los puntos vistos a través de la lente.
 
-**Cámara trasera en iPhone Pro.** Safari puede abrir el teleobjetivo, el gran angular o una cámara virtual que cambia de lente sola. La app pasa a la cámara principal cuando el navegador la ofrece y, además, mide la focal real de la lente activa con el mismo patrón: con el celular inclinado, la perspectiva de los cuatro cuadrados da `f` (las restricciones r1 ⟂ r2 y |r1| = |r2| de la homografía). Después, la distancia a la pantalla sale de la pose. La calibración queda guardada por cámara.
+**Física.** Con la lente a una fracción `u` del camino entre la cámara y la pantalla, el aumento cumple `1/M = 1 − P · D · u(1 − u)`. Es máximo a mitad de camino, donde `P = (4 / D) · (1 − 1/M)`. El aumento `M` es un cociente medido en la imagen, así que no depende de la cámara ni del tamaño de la pantalla. La única medida absoluta es `D`, la distancia del celular a la pantalla, y un error en `D` pasa igual a la graduación: si `D` está 20 % corto, −2,50 se lee −3,00.
 
-En pruebas con imágenes sintéticas en perspectiva recupera la focal de lentes de 13, 26 y 77 mm con error menor al 2 %, y la graduación exacta (por ejemplo −4,25 −1,25 × 20) con el celular girado o apaisado. Falta validarlo con anteojos reales.
+**Distancia.** Hay dos formas de obtenerla:
+- *Cinta métrica (recomendada):* con el celular apoyado, se mide la distancia a mano. La app compara con su propia estimación y corrige todas las distancias del barrido, así que no depende de la calibración de la pantalla ni de la focal de la cámara.
+- *Sin cinta:* la focal se calibra con vistas inclinadas del patrón, usando solo vistas quietas (sin deformación del obturador rodante), en al menos dos direcciones, con mínimos cuadrados conjuntos. La focal se normaliza por el lado largo del cuadro, así que no cambia si se gira el celular. En este caso la precisión depende de la calibración de la pantalla de la compu.
+
+**Estimación robusta.** Cada cuadro da un vector de potencia (equivalente esférico y las dos componentes del cilindro) igual a `k · P`, con `k = 4u(1 − u) ≤ 1`. Se estima la dirección común con los cuadros fuertes, se descartan los que no la siguen (la lente tapa solo parte del círculo, reflejos o movimiento lateral rápido) y el valor final es la envolvente superior. Una curva en vivo muestra el barrido, y el resultado sale con un nivel de confianza; con confianza baja, la app pide repetir.
+
+**Cámara trasera en iPhone Pro.** Safari puede abrir el teleobjetivo, el gran angular o una cámara virtual que cambia de lente sola. La app pasa a la cámara principal cuando el navegador la ofrece.
+
+**Pruebas.** Usé un simulador físico con trazado de rayos: cámara pinhole con obturador rodante, anteojo de dos lentes delgadas con aro, y pantalla con bisel y fondo. En 24 barridos simulados con mano firme o inquieta, y lentes de −7,00 a +3,50 con cilindros de hasta −2,00, el método actual acierta la graduación exacta en los 24 casos (el anterior, en 18). El error medio del equivalente esférico es de 0,01 D. Una prueba de punta a punta en el navegador, con una cámara falsa que reproduce un barrido de −2,50, da −2,50 con confianza alta. Falta validarlo con anteojos reales.
+
+**Datos para revisar.** Después de cada medición, «Copiar datos para revisar» copia un JSON con la cámara, la escala y cada cuadro (distancia, aumentos, eje, puntos, posición del círculo).
 
 ## Cómo funciona
 

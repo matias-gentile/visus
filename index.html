@@ -225,6 +225,12 @@ input[type="number"]{font:1.05rem var(--f-body);min-height:48px;border-radius:10
 .patbar{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));left:max(12px, env(safe-area-inset-left,0px));right:max(12px, env(safe-area-inset-right,0px));display:flex;justify-content:space-between;align-items:center;gap:10px;font:500 .8rem var(--f-body);color:var(--pat-note);flex-wrap:wrap}
 .patbar button{appearance:none;border:1px solid var(--pat-note);background:transparent;color:var(--pat-note);border-radius:8px;padding:6px 10px;font:inherit;cursor:pointer}
 .patwarn{position:absolute;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:12px;right:12px;text-align:center;color:var(--pat-note);font-size:.85rem}
+.patcard{position:absolute;left:max(12px, env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));border:1.5px dashed var(--pat-note);display:flex;align-items:flex-end;padding:6px;color:var(--pat-note);font-size:.75rem;line-height:1.2}
+.inline{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.inline .btn{width:auto}
+.check{display:flex;gap:10px;align-items:flex-start;font-weight:700;cursor:pointer}
+.check input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--accent);flex:none}
+.spark{display:block;width:100%;height:72px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
 
 /* Report */
 .findings{list-style:none;padding:0;display:flex;flex-direction:column;gap:8px}
@@ -480,8 +486,8 @@ textarea{width:100%;min-height:200px;font:.82rem/1.45 var(--f-mono);border:1.5px
         <ol class="steps">
           <li>En una compu, abrí esta dirección y calibrá la pantalla con una tarjeta.</li>
           <li>Acá, activá la cámara trasera y apuntá al patrón desde unos 50 cm.</li>
-          <li>Inclina el celular hacia los costados unos segundos: así la app mide el ángulo real de tu cámara, uses la lente que uses.</li>
-          <li>Poné cada lente delante del círculo de puntos y movela despacio.</li>
+          <li>Indicá la distancia a la pantalla: con una cinta métrica es lo más preciso.</li>
+          <li>Pasá cada lente despacio entre la pantalla y el celular.</li>
         </ol>
         <div class="urlbox"><code id="patUrl"></code><button class="btn btn-ghost" id="patCopy">Copiar</button></div>
         <button class="btn btn-primary" id="lensStart">Activar cámara trasera</button>
@@ -491,20 +497,35 @@ textarea{width:100%;min-height:200px;font:.82rem/1.45 var(--f-mono);border:1.5px
       <div id="lensCam" class="stack" hidden>
         <div class="camslot" id="lensslot"></div>
         <p class="note info" id="lensStatus">Buscando los cuatro cuadrados del patrón…</p>
-        <div class="stack" id="lensCalBox">
-          <p><strong>Primero, calibrá la cámara.</strong> Apuntando al patrón, inclina despacio el celular hacia un costado y después hacia el otro, como si miraras el patrón de reojo, unos 30°.</p>
-          <div class="meter"><i id="lensCalBar"></i></div>
+        <div class="stack" id="scaleBox">
+          <p><strong>Distancia a la pantalla.</strong> La graduación sale de cuánto cambia el círculo de puntos y de la distancia entre el celular y la pantalla: si la distancia está corrida un 10 %, la graduación también.</p>
+          <div class="seg" id="scaleMode"><button data-m="tape" aria-pressed="true">Con cinta métrica</button><button data-m="tilt" aria-pressed="false">Sin cinta</button></div>
+          <div class="stack" id="tapeBox">
+            <p>Apoyá el celular firme, sobre libros o una caja, apuntando al patrón a unos 50 cm. Medí con una cinta desde la cámara del celular hasta la pantalla y escribí la distancia.</p>
+            <div class="inline"><input id="tapeCm" type="number" inputmode="decimal" min="20" max="120" step="0.5" placeholder="Distancia en cm"><button class="btn btn-primary" id="tapeSet">Usar</button></div>
+            <p class="hint">Dejá el celular apoyado ahí también durante la medición: así queda más precisa.</p>
+          </div>
+          <div class="stack" id="tiltBox" hidden>
+            <p>Inclina el celular hacia un costado, como si miraras el patrón de reojo (unos 30°), y <strong>quedate quieto un segundo</strong>. Repetí hacia el otro costado y hacia arriba o abajo.</p>
+            <div class="meter"><i id="lensCalBar"></i></div>
+            <p class="hint">Sin cinta, la precisión depende de que la pantalla de la compu esté bien calibrada con la tarjeta.</p>
+          </div>
         </div>
-        <p class="hint" id="lensCalMsg" hidden></p>
+        <div class="readline" id="scaleDone" hidden><span id="scaleMsg"></span><button class="btn-quiet" id="scaleRedo">Cambiar</button></div>
         <div class="seg" id="lensSide"><button data-side="OD" aria-pressed="true">Lente derecha</button><button data-side="OI" aria-pressed="false">Lente izquierda</button></div>
-        <p>Sostené el anteojo por una patilla, cerca de la bisagra, con las patillas hacia el celular y el marco derecho. Poné la lente elegida delante del círculo de puntos y tocá «Medir». Durante 8 segundos, movelo despacio desde la pantalla hasta el celular y de vuelta.</p>
+        <p>Sostené el anteojo por una patilla, cerca de la bisagra, con las patillas hacia el celular y el marco derecho, sin inclinarlo. Tocá «Medir» y pasá la lente elegida despacio por delante del círculo de puntos, desde la pantalla hasta cerca del celular y de vuelta, dos veces. El número sube cuando la lente pasa por la mitad del camino.</p>
+        <canvas class="spark" id="sweepCv" aria-label="Curva de la medición"></canvas>
+        <p class="mono" id="sweepLive" hidden></p>
         <div class="meter"><i id="lensBar"></i></div>
         <button class="btn btn-primary" id="lensRec" disabled>Medir esta lente</button>
+        <p class="note" id="lensWarn" hidden></p>
         <dl class="lensres" id="lensRes"></dl>
         <div class="actions">
           <button class="btn btn-ghost" id="lensReport" hidden>Ver en el informe</button>
+          <button class="btn btn-ghost" id="lensDiagCopy" hidden>Copiar datos para revisar</button>
           <button class="btn-quiet" id="lensBack">Volver al inicio</button>
         </div>
+        <textarea id="lensDiagTa" hidden readonly aria-label="Datos de la medición"></textarea>
         <p class="fine mono" id="lensDiag"></p>
       </div>
     </section>
@@ -523,11 +544,14 @@ textarea{width:100%;min-height:200px;font:.82rem/1.45 var(--f-mono);border:1.5px
         <button class="round" id="ppxPlus" aria-label="Agrandar el rectángulo">+</button>
       </div>
       <p class="readline"><span>Escala de esta pantalla</span><span class="mono" id="ppxValue">—</span></p>
-      <button class="btn btn-primary" id="patShow">Mostrar el patrón</button>
+      <label class="check"><input type="checkbox" id="patCheck"> La tarjeta coincide exactamente con el rectángulo</label>
+      <p class="hint">Este paso define el tamaño real del patrón. Si queda corrido, la graduación sale corrida en la misma proporción (salvo que midas la distancia con una cinta). Después no cambies el zoom del navegador.</p>
+      <button class="btn btn-primary" id="patShow" disabled>Mostrar el patrón</button>
     </section>
     <section class="screen" data-screen="patshow" hidden>
       <div class="patpage">
-        <div class="patbar"><span>Dejá esta pantalla así y seguí en el celular.</span><span><button id="patFull">Pantalla completa</button> <button id="patBack">Recalibrar</button></span></div>
+        <div class="patbar"><span>Dejá esta pantalla así y seguí en el celular. <span id="patScale"></span></span><span><button id="patFull">Pantalla completa</button> <button id="patBack">Recalibrar</button></span></div>
+        <div class="patcard" id="patCard"><span>Control: una tarjeta tiene que entrar justo acá</span></div>
         <div id="patSvg"></div>
         <p class="patwarn" id="patWarn" hidden>La ventana es baja para el patrón completo: usá pantalla completa.</p>
       </div>
@@ -672,7 +696,8 @@ const VC = (() => {
   function ellRes(f, p) { const x = p[0] - f.cx, y = p[1] - f.cy; const v = f.a * x * x + 2 * f.b * x * y + f.c * y * y; return Math.sqrt(Math.max(v, 0)) - 1; }
 
   // Analiza un cuadro de la cámara trasera: marcadores → homografía → anillo de puntos → aumento por meridiano.
-  function analyzePattern(img, fProc) {
+  // fProc: focal en px del cuadro procesado (para la distancia). Lp: lado largo del cuadro (normaliza la calibración).
+  function analyzePattern(img, fProc, Lp) {
     const W = img.width, H = img.height, d = img.data, N = W * H;
     const g = new Uint8Array(N), hist = new Uint32Array(256);
     for (let i = 0, j = 0; i < N; i++, j += 4) { const y = (d[j] * 77 + d[j + 1] * 151 + d[j + 2] * 28) >> 8; g[i] = y; hist[y]++; }
@@ -687,30 +712,35 @@ const VC = (() => {
     if (!Hm) return { ok: false, reason: 'markers' };
     const pxmm = (shortAvg / PAT.short + longAvg / PAT.long) / 2;
     const cal = focalFromH(Hm, W / 2, H / 2);
-    const fEst = cal && cal.persp >= 0.035 && cal.tilt >= 12 && cal.normRatio < 1.1 ? cal.f : null;
+    const calOk = cal && cal.persp >= 0.035 && cal.tilt >= 12 && cal.normRatio < 1.1;
+    const fEst = calOk ? cal.f : null;
+    const calEq = calOk ? calEquations(Hm, W / 2, H / 2, Lp || Math.max(W, H)) : null;
     const Dmm = fProc ? distFromH(Hm, W / 2, H / 2, fProc) : null;
     const mkSet = new Set(mk);
     const dotAexp = Math.PI * Math.pow(PAT.dotD / 2 * pxmm, 2);
     const pts = [], ipts = [];
     for (const b of blobs) {
       if (mkSet.has(b) || b.edge) continue;
-      if (b.a < Math.max(4, dotAexp * 0.15) || b.a > Math.min(mk[3].a / 2.5, dotAexp * 5)) continue;
+      // Rango amplio: una lente de −10 D achica los puntos a la mitad; una de +4 D los agranda casi 2,5 veces.
+      if (b.a < Math.max(4, dotAexp * 0.1) || b.a > Math.min(mk[3].a / 1.5, dotAexp * 9)) continue;
       if (b.compact < 0.7 || b.elong > 1.8) continue;
       const P = applyH(Hm, b.cx, b.cy), r = Math.hypot(P[0], P[1]);
-      if (r < 5 || r > 44 || Math.abs(P[1]) > PAT.mk[2][1] - 12) continue;
+      if (r < 3 || r > 58 || Math.abs(P[1]) > PAT.mk[2][1] - 9 || Math.abs(P[0]) > PAT.mk[1][0] - 9) continue;
       pts.push(P); ipts.push([b.cx, b.cy]);
     }
-    const base = { ok: true, markers: mk.map(b => [b.cx, b.cy]), dots: ipts, Dmm, pxmm, H: Hm, fEst, tilt: cal ? cal.tilt : null };
+    const base = { ok: true, markers: mk.map(b => [b.cx, b.cy]), dots: ipts, Dmm, pxmm, H: Hm, fEst, calEq, tilt: cal ? cal.tilt : null, normal: cal ? cal.normal : null };
     if (pts.length < 7) return Object.assign(base, { fit: null, reason: 'dots' });
     let fit = fitEllipse(pts);
     if (fit) { const keep = pts.filter(p => Math.abs(ellRes(fit, p)) < 0.2); if (keep.length >= 7 && keep.length < pts.length) fit = fitEllipse(keep) || fit; }
     if (!fit || fit.rms > 0.06) return Object.assign(base, { fit: null, reason: 'fit' });
     const M1 = fit.s1 / PAT.R, M2 = fit.s2 / PAT.R;
     const phi1 = ((-fit.ang1 * 180 / Math.PI) % 180 + 180) % 180, phi2 = (phi1 + 90) % 180;
-    const out = Object.assign(base, { fit, M1, M2, Mbar: Math.sqrt(M1 * M2), dev: Math.abs(Math.log(Math.sqrt(M1 * M2))), phi1, phi2 });
-    if (Dmm) { const pw = M => (4 / (Dmm / 1000)) * (1 - 1 / M); out.P1 = pw(M1); out.P2 = pw(M2); }
+    const out = Object.assign(base, { fit, M1, M2, Mbar: Math.sqrt(M1 * M2), dev: Math.abs(Math.log(Math.sqrt(M1 * M2))), phi1, phi2, ringC: [fit.cx, fit.cy], nDots: pts.length });
+    if (Dmm) { out.P1 = powerAt(M1, Dmm); out.P2 = powerAt(M2, Dmm); }
     return out;
   }
+  // Lente a mitad de camino entre la cámara y la pantalla: 1/M = 1 − P·D/4  →  P = (4/D)(1 − 1/M), con D en metros.
+  function powerAt(M, Dmm) { return (4 / (Dmm / 1000)) * (1 - 1 / M); }
 
   // Elige los 4 marcadores entre los blobs compactos más grandes: cuadrilátero convexo con la proporción del patrón
   // y cuadrados del tamaño esperado para ese cuadrilátero.
@@ -774,7 +804,23 @@ const VC = (() => {
     const n1 = Math.hypot(v1[0], v1[1], v1[2]), n2 = Math.hypot(v2[0], v2[1], v2[2]);
     // Variación relativa de profundidad a lo largo del patrón (no depende de f): cerca de 0 = vista de frente, f no observable.
     const persp = Math.hypot(h1[2], h2[2]) * 80 / Math.abs(col[2][2]);
-    return { f, tilt, persp, normRatio: Math.max(n1 / n2, n2 / n1) };
+    const nn = Math.hypot(nx, ny, nz), sg = nz < 0 ? -1 : 1;
+    return { f, tilt, persp, normRatio: Math.max(n1 / n2, n2 / n1), normal: [sg * nx / nn, sg * ny / nn] };
+  }
+  // Las dos ecuaciones de una vista, normalizadas para combinar muchas vistas por mínimos cuadrados.
+  // Coordenadas de imagen divididas por el lado largo Lp: la incógnita es u = (Lp/f)², y no depende de la orientación.
+  function calEquations(Hi2m, cx, cy, Lp) {
+    const col = camCols(Hi2m, cx, cy); if (!col) return null;
+    const g = 1 / Lp, a = [col[0][0] * g, col[0][1] * g, col[0][2]], b = [col[1][0] * g, col[1][1] * g, col[1][2]];
+    const N = a[0] * a[0] + a[1] * a[1] + a[2] * a[2] + b[0] * b[0] + b[1] * b[1] + b[2] * b[2];
+    return [[(a[0] * b[0] + a[1] * b[1]) / N, (a[2] * b[2]) / N], [((a[0] * a[0] + a[1] * a[1]) - (b[0] * b[0] + b[1] * b[1])) / N, (a[2] * a[2] - b[2] * b[2]) / N]];
+  }
+  // Focal normalizada (f / lado largo) a partir de muchas vistas: mínimos cuadrados conjuntos.
+  function focalJoint(eqs) {
+    let sAA = 0, sAB = 0;
+    eqs.forEach(v => v.forEach(([A, B]) => { sAA += A * A; sAB += A * B; }));
+    const u = -sAB / sAA;
+    return u > 0 ? 1 / Math.sqrt(u) : null;
   }
   // Distancia de la cámara al centro del patrón (mm), descomponiendo la pose con la focal conocida.
   function distFromH(Hi2m, cx, cy, f) {
@@ -809,6 +855,62 @@ const VC = (() => {
     return Object.assign(rxFromMeridians(top), { n: top.length, Dmm: D });
   }
 
+  // Vector de potencia (M, J0, J45) de un cuadro: equivalente esférico y las dos componentes del cilindro.
+  function pvec(f) {
+    const t = f.phi1 * Math.PI / 180, c = Math.cos(t), s = Math.sin(t);
+    const m11 = f.P1 * c * c + f.P2 * s * s, m22 = f.P1 * s * s + f.P2 * c * c, m12 = (f.P1 - f.P2) * c * s;
+    return [(m11 + m22) / 2, (m11 - m22) / 2, m12];
+  }
+  function rxFromVec(v) {
+    const m11 = v[0] + v[1], m22 = v[0] - v[1], m12 = v[2];
+    const tr = m11 + m22, dif = Math.sqrt((m11 - m22) * (m11 - m22) + 4 * m12 * m12);
+    const Pmax = (tr + dif) / 2, Pmin = (tr - dif) / 2;
+    const phiMax = ((0.5 * Math.atan2(2 * m12, m11 - m22) * 180 / Math.PI) % 180 + 180) % 180;
+    const S = q4(Pmax); let C = q4(Pmin - Pmax); if (C > -0.25) C = 0;
+    return { S, C, axis: C ? tabo(phiMax) : null, se: S + C / 2, raw: { Pmax, Pmin, phiMax } };
+  }
+  /* Estimación robusta sobre todo el barrido. Con la lente a una fracción u del camino, cada cuadro mide
+     k·P, con k = 4u(1−u) ≤ 1 y el mismo P. Entonces todos los vectores de potencia apuntan en la misma dirección
+     y solo cambia el largo: se estima la dirección con los cuadros fuertes, se descartan los que no la siguen
+     (lente cubriendo solo parte del círculo, reflejos, movimiento) y el valor es la envolvente superior. */
+  function lensRobust(frames) {
+    const fr = frames.filter(f => !f.moving && f.P1 != null);
+    if (fr.length < 6) return { fail: 'few', n: fr.length };
+    const V = fr.map(pvec), N = V.map(v => Math.hypot(v[0], v[1], v[2]));
+    const ns = N.slice().sort((a, b) => a - b), n90 = ns[Math.floor(0.9 * (ns.length - 1))];
+    if (n90 < 0.12) return { S: 0, C: 0, axis: null, se: 0, weak: true, conf: 'alta', n: fr.length, inliers: fr.length, peakN: fr.length };
+    let d = [0, 0, 0];
+    V.forEach((v, i) => { if (N[i] >= 0.5 * n90) { d[0] += v[0]; d[1] += v[1]; d[2] += v[2]; } });
+    let inl = [];
+    for (let it = 0; it < 5; it++) {
+      const dn = Math.hypot(d[0], d[1], d[2]); if (!dn) break;
+      const u = [d[0] / dn, d[1] / dn, d[2] / dn];
+      inl = [];
+      V.forEach((v, i) => {
+        const p = v[0] * u[0] + v[1] * u[1] + v[2] * u[2];
+        const res = Math.hypot(v[0] - p * u[0], v[1] - p * u[1], v[2] - p * u[2]);
+        if (p > 0 && res <= 0.08 + 0.12 * N[i]) inl.push({ i, p, res });
+      });
+      if (inl.length < 3) break;
+      const pmax = Math.max(...inl.map(o => o.p));
+      const nd = [0, 0, 0];
+      inl.forEach(o => { if (o.p >= 0.5 * pmax) { const v = V[o.i]; nd[0] += v[0]; nd[1] += v[1]; nd[2] += v[2]; } });
+      d = nd;
+    }
+    if (inl.length < 4) return { fail: 'inconsistent', n: fr.length, inliers: inl.length };
+    const dn = Math.hypot(d[0], d[1], d[2]), u = [d[0] / dn, d[1] / dn, d[2] / dn];
+    const srt = inl.slice().sort((a, b) => b.p - a.p);
+    const drop = srt.length >= 10 ? 1 : 0, K = Math.max(3, Math.round(0.1 * srt.length));
+    const top = srt.slice(drop, drop + K);
+    const peak = top.reduce((s, o) => s + o.p, 0) / top.length;
+    const peakN = srt.filter(o => o.p >= 0.92 * peak).length;
+    const inlierFrac = inl.length / fr.length;
+    const spread = (top[0].p - top[top.length - 1].p) / peak;
+    const conf = peakN >= 4 && inlierFrac >= 0.6 && spread < 0.12 ? 'alta' : (peakN >= 2 && inlierFrac >= 0.4 ? 'media' : 'baja');
+    const Dm = top.reduce((s, o) => s + (fr[o.i].Dmm || 0), 0) / top.length;
+    return Object.assign(rxFromVec([u[0] * peak, u[1] * peak, u[2] * peak]), { conf, n: fr.length, inliers: inl.length, peakN, inlierFrac, spread, Dmm: Dm, peakIdx: top.map(o => o.i) });
+  }
+
   // Lee FocalLengthIn35mmFilm (0xA405) del EXIF de un JPEG.
   function exifF35(buf) {
     const v = new DataView(buf);
@@ -831,7 +933,7 @@ const VC = (() => {
     return null;
   }
 
-  return { PAT, otsu, label, solve, homography, applyH, fitEllipse, analyzePattern, focalFromH, distFromH, rxFromMeridians, lensFromFrames, exifF35, tabo, q4 };
+  return { PAT, otsu, label, solve, homography, applyH, fitEllipse, analyzePattern, powerAt, focalFromH, distFromH, calEquations, focalJoint, rxFromMeridians, lensFromFrames, pvec, rxFromVec, lensRobust, exifF35, tabo, q4 };
 })();
 /*VC-END*/
 
@@ -867,7 +969,7 @@ let pxPerMm = store.get('pxPerMm') || (coarse ? 6.3 : 3.78);
 let pxCalibrated = !!store.get('pxPerMm');
 let A = null, M = null, F = null;
 let LensRes = { OD: null, OI: null };
-const Lens = { side: 'OD', recording: false, frames: [], t0: 0, last: null, lastOkT: 0, canvas: null, ctx: null, label: '', kind: 'main', fNorm: null, fs: [], W: 0, H: 0, PW: 0, PH: 0 };
+const Lens = { side: 'OD', recording: false, frames: [], t0: 0, canvas: null, ctx: null, label: null, kind: 'main', fNorm: null, scaleMode: 'tape', scale: null, eqs: [], bins: {}, prev: null, recentD: [], lastFit: null, diag: null, W: 0, H: 0, PW: 0, PH: 0 };
 let greenColor = '#24875A', accentColor = '#145F6D';
 
 /* ---------- helpers ---------- */
@@ -911,7 +1013,7 @@ const onEnter = {
   amsler: () => amslerCover('OD'),
   far: enterFar,
   lens: enterLens,
-  patcal: () => renderCard(true),
+  patcal: () => { renderCard(true); $('#patCheck').checked = false; $('#patShow').disabled = true; },
   patshow: drawPattern,
   report: () => { wake(false); renderReport(); }
 };
@@ -963,9 +1065,11 @@ function renderCard(horizontal) {
   $('#' + p + 'pxValue').textContent = fmtNum(pxPerMm, 2) + ' px/mm';
 }
 [['', false], ['p', true]].forEach(([p, hz]) => {
-  $('#' + p + 'pxRange').addEventListener('input', e => { pxPerMm = parseFloat(e.target.value); renderCard(hz); });
-  $('#' + p + 'pxMinus').addEventListener('click', () => { pxPerMm = Math.max(2.5, pxPerMm - 0.02); renderCard(hz); });
-  $('#' + p + 'pxPlus').addEventListener('click', () => { pxPerMm = Math.min(8.5, pxPerMm + 0.02); renderCard(hz); });
+  // En la compu, cada ajuste pide volver a confirmar que la tarjeta coincide.
+  const changed = () => { renderCard(hz); if (hz) { $('#patCheck').checked = false; $('#patShow').disabled = true; } };
+  $('#' + p + 'pxRange').addEventListener('input', e => { pxPerMm = parseFloat(e.target.value); changed(); });
+  $('#' + p + 'pxMinus').addEventListener('click', () => { pxPerMm = Math.max(2.5, pxPerMm - 0.02); changed(); });
+  $('#' + p + 'pxPlus').addEventListener('click', () => { pxPerMm = Math.min(8.5, pxPerMm + 0.02); changed(); });
 });
 $('#cardOk').addEventListener('click', () => { store.set('pxPerMm', pxPerMm); pxCalibrated = true; go('distance'); });
 
@@ -1587,40 +1691,9 @@ $('#lensSide').addEventListener('click', e => {
 });
 $('#lensBack').addEventListener('click', () => go('welcome'));
 $('#lensReport').addEventListener('click', () => go('report'));
-$('#lensRec').addEventListener('click', () => {
-  if (Lens.recording) return;
-  Lens.recording = true; Lens.frames = []; Lens.t0 = performance.now();
-  $('#lensRec').disabled = true; $('#lensRec').textContent = 'Midiendo… mové el anteojo despacio';
-  wake(true);
-});
-function rearLoop() {
-  if (!Cam.on || Cam.mode !== 'rear') return;
-  requestAnimationFrame(rearLoop);
-  const v = $('#video'); if (v.readyState < 2 || !v.videoWidth) return;
-  const now = performance.now(); if (now - (rearLoop.t || 0) < 70) return; rearLoop.t = now;
-  const W = v.videoWidth, H = v.videoHeight;
-  const PW = Math.min(1280, W), PH = Math.round(H * PW / W);
-  if (!Lens.canvas) { Lens.canvas = document.createElement('canvas'); Lens.ctx = Lens.canvas.getContext('2d', { willReadFrequently: true }); }
-  if (Lens.canvas.width !== PW || Lens.canvas.height !== PH) { Lens.canvas.width = PW; Lens.canvas.height = PH; }
-  Lens.ctx.drawImage(v, 0, 0, PW, PH);
-  Lens.W = W; Lens.H = H; Lens.PW = PW; Lens.PH = PH;
-  const fProc = Lens.fNorm ? Lens.fNorm * PW : rearFallbackF(PW, PH, Lens.kind);
-  let r;
-  try { r = VC.analyzePattern(Lens.ctx.getImageData(0, 0, PW, PH), fProc); } catch (e) { r = { ok: false, reason: 'error' }; }
-  Lens.last = r;
-  if (r.ok && r.fit) Lens.lastOkT = now;
-  if (r.ok && r.fEst && !Lens.recording) collectFocal(r.fEst / PW);
-  if (Lens.recording) {
-    if (r.ok && r.fit && r.P1 != null && r.Dmm > 250 && r.Dmm < 1000) Lens.frames.push(r);
-    const p = Math.min(1, (now - Lens.t0) / 8000);
-    $('#lensBar').style.width = (p * 100) + '%';
-    if (p >= 1) finishLens();
-  }
-  drawLensOverlay(r, PW, PH);
-  updateLensStatus(r);
-}
 /* Cámara trasera: en iPhone Pro, Safari puede abrir el teleobjetivo, el gran angular o una cámara virtual que
-   cambia de lente sola. Se pasa a la principal si existe, y la focal se mide igual con el patrón inclinado. */
+   cambia de lente sola. Se pasa a la principal si existe. La distancia a la pantalla sale de una cinta métrica
+   (lo más preciso) o de calibrar la focal con el patrón inclinado. */
 function lensKind(label) {
   const l = (label || '').toLowerCase();
   if (/tele/.test(l)) return 'tele';
@@ -1631,7 +1704,9 @@ function lensKind(label) {
 }
 const KIND_F35 = { main: 26, ultra: 13, virtual: 13, tele: 77, front: 26 };
 const KIND_NAME = { tele: 'el teleobjetivo', ultra: 'el gran angular', virtual: 'una cámara múltiple que cambia de lente sola' };
-function rearFallbackF(W, H, kind) { const f35 = KIND_F35[kind] || 26, L = Math.max(W, H); return (L / 2) / ((43.27 / (2 * f35)) * (L / Math.hypot(W, H))); }
+// Focal normalizada por el lado largo del cuadro. El video usa todo el ancho del sensor 4:3, que en "35 mm equivalente" mide 34,6 mm.
+function fallbackNorm(kind) { return (KIND_F35[kind] || 26) / 34.62; }
+function curFNorm() { return Lens.fNorm || fallbackNorm(Lens.kind); }
 async function openRear() {
   const gum = c => navigator.mediaDevices.getUserMedia(c);
   let s;
@@ -1655,51 +1730,127 @@ async function openRear() {
 }
 function initRearInfo() {
   const tr = Cam.stream && Cam.stream.getVideoTracks()[0];
-  Lens.label = (tr && tr.label) || '';
-  Lens.kind = lensKind(Lens.label);
-  Lens.fNorm = store.get('fcal:' + Lens.label) || null;
-  Lens.fs = []; Lens.calRendered = false;
-  renderLensCal();
+  const label = (tr && tr.label) || '';
+  if (label !== Lens.label) { Lens.scale = null; }
+  Lens.label = label;
+  Lens.kind = lensKind(label);
+  Lens.fNorm = store.get('fcal3:' + label) || null;
+  Lens.eqs = []; Lens.bins = {}; Lens.prev = null; Lens.recentD = [];
+  renderScale();
 }
-function collectFocal(fn) {
-  Lens.fs.push(fn); if (Lens.fs.length > 40) Lens.fs.shift();
-  if (!Lens.fNorm) $('#lensCalBar').style.width = Math.min(100, Lens.fs.length / 15 * 100) + '%';
-  if (Lens.fs.length < 15) return;
-  const s = Lens.fs.slice().sort((a, b) => a - b), m = median(s);
-  const spread = (s[Math.floor(s.length * 0.75)] - s[Math.floor(s.length * 0.25)]) / m;
-  if (spread > 0.06) return;
-  const first = !Lens.fNorm;
-  Lens.fNorm = m; store.set('fcal:' + Lens.label, m);
-  if (first) { renderLensCal(); Lens.calRendered = true; toast('Cámara calibrada'); }
+
+/* ---------- escala: cinta o focal ---------- */
+function scaleReady() { return !!(Lens.scale || Lens.fNorm); }
+// Distancia corregida (mm) de un cuadro analizado con la focal actual.
+function lensDist(r) {
+  if (!r || !r.Dmm) return null;
+  if (Lens.scale) return r.Dmm * Lens.scale.c * (Lens.scale.fRef / curFNorm());
+  return Lens.fNorm ? r.Dmm : null;
 }
-function lensF35() { if (!Lens.fNorm || !Lens.PW) return null; return Math.round(Lens.fNorm * Lens.PW * 43.27 / Math.hypot(Lens.PW, Lens.PH)); }
-function renderLensCal() {
-  const done = !!Lens.fNorm;
-  $('#lensCalBox').hidden = done;
-  const msg = $('#lensCalMsg');
-  msg.hidden = !done;
-  if (done) {
-    const f35 = lensF35();
-    msg.textContent = `Cámara calibrada${f35 ? `: equivale a un lente de ${f35} mm` : ''}.` + (KIND_NAME[Lens.kind] ? ` El navegador está usando ${KIND_NAME[Lens.kind]}; la calibración lo compensa.` : '');
+function lensF35() { return Lens.fNorm ? Math.round(Lens.fNorm * 34.62) : null; }
+function renderScale() {
+  const ready = scaleReady();
+  $('#scaleBox').hidden = ready;
+  $('#scaleDone').hidden = !ready;
+  $$('#scaleMode button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === Lens.scaleMode)));
+  $('#tapeBox').hidden = Lens.scaleMode !== 'tape';
+  $('#tiltBox').hidden = Lens.scaleMode !== 'tilt';
+  if (ready) {
+    $('#scaleMsg').textContent = Lens.scale
+      ? `Distancia medida con cinta: ${fmtNum(Lens.scale.tapeCm, 1)} cm.`
+      : `Cámara calibrada: lente equivalente a ${lensF35()} mm.` + (KIND_NAME[Lens.kind] ? ` El navegador usa ${KIND_NAME[Lens.kind]}; la calibración lo compensa.` : '');
   }
+}
+$('#scaleMode').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; Lens.scaleMode = b.dataset.m; renderScale(); });
+$('#scaleRedo').addEventListener('click', () => {
+  if (Lens.recording) return;
+  Lens.scale = null; Lens.fNorm = null; Lens.eqs = []; Lens.bins = {};
+  store.set('fcal3:' + Lens.label, null);
+  $('#lensCalBar').style.width = '0%';
+  renderScale();
+});
+$('#tapeSet').addEventListener('click', () => {
+  const cm = parseFloat(String($('#tapeCm').value).replace(',', '.'));
+  if (!Number.isFinite(cm) || cm < 20 || cm > 120) { toast('Escribí una distancia entre 20 y 120 cm'); return; }
+  const now = performance.now();
+  const recent = Lens.recentD.filter(o => now - o.t < 1500).map(o => o.D);
+  if (recent.length < 4) { toast('Primero apuntá al patrón y dejá el celular quieto'); return; }
+  const est = median(recent), c = cm * 10 / est;
+  if (c < 0.5 || c > 2) { toast(`La cámara estima ${Math.round(est / 10)} cm. Revisá la medida y que apuntes al patrón.`); return; }
+  Lens.scale = { c, fRef: curFNorm(), tapeCm: cm, estCm: est / 10 };
+  renderScale();
+  if (c < 0.8 || c > 1.25) toast(`Ojo: la cámara estimaba ${Math.round(est / 10)} cm. Si la compu no está bien calibrada, con la cinta igual queda bien.`);
+  else toast('Distancia guardada');
+});
+// Calibración de la focal: solo vistas inclinadas y quietas (sin corte por el obturador rodante), en al menos dos direcciones.
+function collectFocal(r) {
+  if (Lens.scaleMode !== 'tilt' || scaleReady() || !r.calEq || !r.still) return;
+  const n = r.normal || [0, 0];
+  const bin = Math.abs(n[0]) > Math.abs(n[1]) ? (n[0] > 0 ? 'R' : 'L') : (n[1] > 0 ? 'D' : 'U');
+  Lens.eqs.push(r.calEq); if (Lens.eqs.length > 80) Lens.eqs.shift();
+  Lens.bins[bin] = (Lens.bins[bin] || 0) + 1;
+  const binsOk = Object.values(Lens.bins).filter(v => v >= 3).length;
+  const prog = Math.min(1, Lens.eqs.length / 14) * (binsOk >= 2 ? 1 : 0.75);
+  $('#lensCalBar').style.width = (prog * 100) + '%';
+  if (Lens.eqs.length < 14 || binsOk < 2) return;
+  const all = VC.focalJoint(Lens.eqs), prev = VC.focalJoint(Lens.eqs.slice(0, -4));
+  if (!all || !prev || Math.abs(all / prev - 1) > 0.015) return;
+  Lens.fNorm = all; store.set('fcal3:' + Lens.label, all);
+  renderScale(); toast('Cámara calibrada');
+}
+
+/* ---------- bucle de la cámara trasera ---------- */
+function rearLoop() {
+  if (!Cam.on || Cam.mode !== 'rear') return;
+  requestAnimationFrame(rearLoop);
+  const v = $('#video'); if (v.readyState < 2 || !v.videoWidth) return;
+  const now = performance.now(); if (now - (rearLoop.t || 0) < 70) return; rearLoop.t = now;
+  const W = v.videoWidth, H = v.videoHeight;
+  const sc = Math.min(1, 1280 / Math.max(W, H)), PW = Math.round(W * sc), PH = Math.round(H * sc), Lp = Math.max(PW, PH);
+  if (!Lens.canvas) { Lens.canvas = document.createElement('canvas'); Lens.ctx = Lens.canvas.getContext('2d', { willReadFrequently: true }); }
+  if (Lens.canvas.width !== PW || Lens.canvas.height !== PH) { Lens.canvas.width = PW; Lens.canvas.height = PH; Lens.prev = null; }
+  Lens.ctx.drawImage(v, 0, 0, PW, PH);
+  Lens.W = W; Lens.H = H; Lens.PW = PW; Lens.PH = PH;
+  let r;
+  try { r = VC.analyzePattern(Lens.ctx.getImageData(0, 0, PW, PH), curFNorm() * Lp, Lp); } catch (e) { r = { ok: false, reason: 'error' }; }
+  r.t = now;
+  // Quietud: cuánto se movieron los cuadrados desde el cuadro anterior (px por 100 ms, relativo al lado largo).
+  if (r.ok && Lens.prev && Lens.prev.ok && now - Lens.prev.t < 400) {
+    let d = 0; for (let i = 0; i < 4; i++) d += Math.hypot(r.markers[i][0] - Lens.prev.markers[i][0], r.markers[i][1] - Lens.prev.markers[i][1]);
+    r.mkSpeed = (d / 4) / Lp * (100 / (now - Lens.prev.t));
+    r.still = r.mkSpeed < 0.006;
+  }
+  if (r.ok && r.Dmm) { Lens.recentD.push({ t: now, D: r.Dmm * (r.still === false ? NaN : 1) }); Lens.recentD = Lens.recentD.filter(o => now - o.t < 3000 && Number.isFinite(o.D)); }
+  if (r.ok) collectFocal(r);
+  if (Lens.recording) recordFrame(r, now);
+  Lens.prev = r;
+  drawLensOverlay(r, PW, PH);
+  updateLensStatus(r);
 }
 function updateLensStatus(r) {
   const st = $('#lensStatus');
   let msg, cls = 'note info';
-  if (Lens.PW) $('#lensDiag').textContent = `${Lens.label || 'Cámara trasera'} · ${Lens.W}×${Lens.H}` + (Lens.fNorm ? ` · ${lensF35()} mm equiv.` : ` · sin calibrar (${Lens.fs.length}/15)`) + (r.ok && r.Dmm ? ` · ${Math.round(r.Dmm / 10)} cm` : '');
-  if (Lens.fNorm && !Lens.calRendered && Lens.PW) { renderLensCal(); Lens.calRendered = true; }
+  const D = lensDist(r);
+  if (Lens.PW) {
+    const scaleTxt = Lens.scale ? `cinta ${fmtNum(Lens.scale.tapeCm, 1)} cm` : (Lens.fNorm ? `focal ${lensF35()} mm` : 'sin escala');
+    $('#lensDiag').textContent = `${Lens.label || 'Cámara trasera'} · ${Lens.W}×${Lens.H} · ${scaleTxt}` + (D ? ` · ${Math.round(D / 10)} cm` : '');
+  }
   if (!r.ok) msg = 'Buscando los cuatro cuadrados del patrón. Apuntá a la pantalla de la compu desde unos 50 cm, con el patrón entero a la vista.';
-  else if (!Lens.fNorm) msg = r.fEst ? 'Bien, seguí inclinándolo hacia un lado y hacia el otro hasta que se llene la barra.' : 'Patrón encontrado. Ahora inclina el celular hacia un costado, como si miraras el patrón de reojo (unos 30°), y después hacia el otro.';
-  else {
-    const cm = Math.round(r.Dmm / 10);
-    if (cm < 35) msg = `Estás a ${cm} cm de la pantalla: alejate un poco (ideal, 45 a 60 cm).`;
-    else if (cm > 75) msg = `Estás a ${cm} cm de la pantalla: acercate un poco (ideal, 45 a 60 cm).`;
+  else if (!scaleReady()) {
+    if (Lens.scaleMode === 'tape') msg = `Patrón encontrado. Apoyá el celular quieto, medí la distancia hasta la pantalla con la cinta y escribila${r.Dmm ? ` (la cámara estima unos ${Math.round(r.Dmm / 10)} cm)` : ''}.`;
+    else if (r.calEq && r.still) msg = 'Bien, así. Ahora inclinalo hacia otro lado y volvé a quedarte quieto.';
+    else if (r.calEq) msg = 'Buen ángulo: quedate quieto un momento.';
+    else msg = 'Patrón encontrado. Inclina el celular hacia un costado, como si miraras el patrón de reojo, y quedate quieto un segundo.';
+  } else {
+    const cm = Math.round(D / 10);
+    if (cm < 30) msg = `Estás a ${cm} cm de la pantalla: alejate un poco (ideal, 40 a 60 cm).`;
+    else if (cm > 80) msg = `Estás a ${cm} cm de la pantalla: acercate un poco (ideal, 40 a 60 cm).`;
     else if (!r.fit) msg = `A ${cm} cm de la pantalla. No veo bien el círculo de puntos: que la lente lo cubra entero, o sacá el anteojo para ver el chequeo sin lente.`;
-    else if (r.dev < 0.012) { msg = `A ${cm} cm de la pantalla · aumento ${fmtNum(r.Mbar, 2)}. Sin lente debería dar 1,00: así se ve que la medición está bien encuadrada.`; cls = 'note ok'; }
+    else if (r.dev < 0.012) { msg = `A ${cm} cm de la pantalla · aumento ${fmtNum(r.Mbar, 2)}. Sin lente tiene que dar 1,00: así se ve que está bien encuadrado.`; cls = 'note ok'; }
     else msg = `A ${cm} cm de la pantalla · aumento ${fmtNum(r.Mbar, 2)} ${r.Mbar < 1 ? '(achica: lente negativa)' : '(agranda: lente positiva)'}.`;
   }
   st.textContent = msg; st.className = cls;
-  if (!Lens.recording) $('#lensRec').disabled = !(Lens.fNorm && r.ok && r.Dmm > 250 && r.Dmm < 1000);
+  if (!Lens.recording) $('#lensRec').disabled = !(scaleReady() && r.ok && D > 250 && D < 1000);
 }
 function drawLensOverlay(r, PW, PH) {
   const c = $('#overlay');
@@ -1712,13 +1863,71 @@ function drawLensOverlay(r, PW, PH) {
   g.fillStyle = accentColor;
   r.dots.forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 3, 0, Math.PI * 2); g.fill(); });
 }
+
+/* ---------- medición de una lente ---------- */
+const REC_MAX = 14000, REC_MIN = 4000;
+$('#lensRec').addEventListener('click', () => {
+  if (Lens.recording) { if (performance.now() - Lens.t0 >= REC_MIN) finishLens(); else toast('Seguí unos segundos más'); return; }
+  Lens.recording = true; Lens.frames = []; Lens.t0 = performance.now(); Lens.lastFit = null;
+  $('#lensRec').textContent = 'Terminar'; $('#lensRec').disabled = false;
+  $('#lensWarn').hidden = true; $('#sweepLive').hidden = false; $('#sweepLive').textContent = 'Pasá la lente despacio por delante del círculo…';
+  drawSweep();
+  wake(true);
+});
+function recordFrame(r, now) {
+  const D = lensDist(r);
+  if (r.ok && r.fit && D > 250 && D < 1000) {
+    const f = { t: now - Lens.t0, Dmm: D, M1: r.M1, M2: r.M2, phi1: r.phi1, P1: VC.powerAt(r.M1, D), P2: VC.powerAt(r.M2, D), ringC: r.ringC, nDots: r.nDots, moving: false };
+    // Si el círculo se desplaza muy rápido (la lente se mueve de costado), el obturador rodante lo deforma: ese cuadro no cuenta.
+    // A 120 mm/s la deformación todavía es menor al 2 %.
+    const p = Lens.lastFit;
+    if (p && f.t - p.t < 400) f.moving = Math.hypot(f.ringC[0] - p.ringC[0], f.ringC[1] - p.ringC[1]) / ((f.t - p.t) / 1000) > 120;
+    Lens.lastFit = f;
+    Lens.frames.push(f);
+    const se = f => (f.P1 + f.P2) / 2, ok = Lens.frames.filter(x => !x.moving);
+    const peak = ok.length ? ok.reduce((m, x) => Math.abs(se(x)) > Math.abs(m) ? se(x) : m, 0) : 0;
+    $('#sweepLive').textContent = `Ahora ${fmtD(VC.q4(se(f)))} · máximo ${fmtD(VC.q4(peak))}` + (f.moving ? ' · más despacio' : '');
+    drawSweep();
+  }
+  const p = Math.min(1, (now - Lens.t0) / REC_MAX);
+  $('#lensBar').style.width = (p * 100) + '%';
+  if (p >= 1) finishLens();
+}
+function drawSweep() {
+  const cv = $('#sweepCv'), dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || 300, h = cv.clientHeight || 72;
+  if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  const fr = Lens.frames || []; if (!fr.length) return;
+  const se = f => (f.P1 + f.P2) / 2;
+  const vals = fr.map(se), amax = Math.max(0.5, ...vals.map(Math.abs)) * 1.15, sgn = vals.reduce((s, v) => s + v, 0) < 0 ? -1 : 1;
+  const X = t => 6 + (w - 12) * Math.min(1, t / REC_MAX), Y = v => h - 6 - (h - 12) * Math.max(0, sgn * v) / amax;
+  g.strokeStyle = accentColor; g.lineWidth = 2; g.beginPath();
+  fr.forEach((f, i) => { const x = X(f.t), y = Y(se(f)); if (i) g.lineTo(x, y); else g.moveTo(x, y); });
+  g.stroke();
+  fr.forEach(f => { g.fillStyle = f.moving ? greenColor : accentColor; g.globalAlpha = f.moving ? 0.35 : 1; g.beginPath(); g.arc(X(f.t), Y(se(f)), 2.2, 0, Math.PI * 2); g.fill(); });
+  g.globalAlpha = 1;
+}
+const FAIL_MSG = {
+  few: 'No llegué a ver el círculo de puntos a través de la lente en suficientes cuadros. Que la lente cubra todo el círculo y pasala más despacio.',
+  inconsistent: 'Las mediciones no coinciden entre sí. Puede que la lente no cubriera todo el círculo o que se moviera de costado. Probá de nuevo, más despacio.',
+  low: 'Casi no pasaste la lente por la mitad del camino entre la pantalla y el celular. Repetí acercándola hasta el celular y volviendo, despacio.'
+};
 function finishLens() {
   Lens.recording = false;
   wake(false);
-  const res = VC.lensFromFrames(Lens.frames);
   $('#lensRec').textContent = 'Medir esta lente'; $('#lensBar').style.width = '0%';
-  if (!res) { toast('No pude medir: probá que la lente cubra todo el círculo de puntos'); return; }
-  LensRes[Lens.side] = res;
+  const res = VC.lensRobust(Lens.frames);
+  Lens.diag = buildDiag(res);
+  $('#lensDiagCopy').hidden = false;
+  const warn = $('#lensWarn');
+  if (res.fail || res.conf === 'baja') {
+    warn.textContent = FAIL_MSG[res.fail] || FAIL_MSG.low; warn.hidden = false;
+    return;
+  }
+  warn.hidden = res.conf !== 'media';
+  if (res.conf === 'media') warn.textContent = 'Resultado con confianza media: hubo pocos cuadros con la lente justo en la mitad del camino. Si podés, repetí la medición para confirmarlo.';
+  LensRes[Lens.side] = Object.assign({}, res, { method: Lens.scale ? 'tape' : 'tilt' });
   toast(Lens.side === 'OD' ? 'Lente derecha medida' : 'Lente izquierda medida');
   if (Lens.side === 'OD' && !LensRes.OI) { Lens.side = 'OI'; $$('#lensSide button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.side === 'OI'))); }
   renderLensRes();
@@ -1727,13 +1936,37 @@ function renderLensRes() {
   const has = LensRes.OD || LensRes.OI;
   $('#lensRes').innerHTML = has ? ['OD', 'OI'].map(e => {
     const r = LensRes[e];
-    return `<dt>${e}</dt><dd class="rx">${r ? fmtRx(r) + `<small>equivalente esférico ${fmtD(r.se)}${r.weak ? ' · casi sin graduación' : ''}</small>` : '<span class="dim">sin medir</span>'}</dd>`;
+    return `<dt>${e}</dt><dd class="rx">${r ? fmtRx(r) + `<small>equivalente esférico ${fmtD(r.se)}${r.weak ? ' · casi sin graduación' : ''}${r.conf ? ' · confianza ' + r.conf : ''}</small>` : '<span class="dim">sin medir</span>'}</dd>`;
   }).join('') : '';
   $('#lensReport').hidden = !has;
 }
+/* ---------- datos para revisar ---------- */
+function buildDiag(res) {
+  const r3 = x => Math.round(x * 1000) / 1000, r4 = x => Math.round(x * 10000) / 10000, r1 = x => Math.round(x * 10) / 10;
+  return {
+    app: 'visus-anteojos', v: 5, fecha: new Date().toISOString(), lente: Lens.side,
+    camara: Lens.label, tipo: Lens.kind, video: [Lens.W, Lens.H], proc: [Lens.PW, Lens.PH],
+    focalNorm: Lens.fNorm ? r3(Lens.fNorm) : null, focalFallback: r3(fallbackNorm(Lens.kind)),
+    escala: Lens.scale ? { cintaCm: Lens.scale.tapeCm, estimadoCm: r1(Lens.scale.estCm), c: r3(Lens.scale.c) } : null,
+    resultado: res.fail ? { error: res.fail, n: res.n, inliers: res.inliers } : { S: res.S, C: res.C, eje: res.axis, se: res.se, conf: res.conf, n: res.n, inliers: res.inliers, pico: res.peakN, raw: res.raw && { Pmax: r3(res.raw.Pmax), Pmin: r3(res.raw.Pmin), phi: r1(res.raw.phiMax) } },
+    columnas: ['t_ms', 'D_mm', 'M1', 'M2', 'phi1', 'puntos', 'cx_mm', 'cy_mm', 'mov'],
+    cuadros: (Lens.frames || []).map(f => [Math.round(f.t), Math.round(f.Dmm), r4(f.M1), r4(f.M2), r1(f.phi1), f.nDots, r1(f.ringC[0]), r1(f.ringC[1]), f.moving ? 1 : 0])
+  };
+}
+$('#lensDiagCopy').addEventListener('click', () => {
+  if (!Lens.diag) return;
+  const text = JSON.stringify(Lens.diag);
+  const ta = $('#lensDiagTa'); ta.value = text;
+  const fallback = () => { ta.hidden = false; ta.focus(); ta.select(); toast('Seleccioné los datos: copialos con el menú'); };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => toast('Datos copiados: pegalos en el chat'), fallback);
+    else fallback();
+  } catch (e) { fallback(); }
+});
 
 /* ---------- patrón (compu) ---------- */
-$('#patShow').addEventListener('click', () => { store.set('pxPerMm', pxPerMm); go('patshow'); });
+$('#patCheck').addEventListener('change', e => { $('#patShow').disabled = !e.target.checked; });
+$('#patShow').addEventListener('click', () => { if ($('#patShow').disabled) return; store.set('pxPerMm', pxPerMm); go('patshow'); });
 $('#patBack').addEventListener('click', () => { try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} go('patcal'); });
 $('#patFull').addEventListener('click', () => { try { const p = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if (p && p.catch) p.catch(() => toast('Esta vista no permite pantalla completa')); } catch (e) {} });
 function drawPattern() {
@@ -1744,6 +1977,10 @@ function drawPattern() {
   for (let i = 0; i < P.nDots; i++) { const a = i * 2 * Math.PI / P.nDots; s += `<circle class="pat-ink" cx="${(P.R * Math.cos(a)).toFixed(3)}" cy="${(P.R * Math.sin(a)).toFixed(3)}" r="${P.dotD / 2}"/>`; }
   $('#patSvg').innerHTML = s + '</svg>';
   $('#patWarn').hidden = window.innerHeight >= Hmm * k + 40;
+  $('#patScale').textContent = `Escala: ${fmtNum(k, 2)} px/mm.`;
+  const card = $('#patCard'); card.style.width = (85.6 * k).toFixed(1) + 'px'; card.style.height = (53.98 * k).toFixed(1) + 'px';
+  // La tarjeta de control va en una esquina; si no entra sin tapar el patrón, se oculta.
+  card.hidden = window.innerWidth / 2 - Wmm / 2 * k < 85.6 * k + 24;
 }
 
 /* ---------- report ---------- */
@@ -1834,7 +2071,10 @@ function renderReport() {
     rows.push(['Amsler', anyAms ? `Rejilla central de ${anyAms.N}°×${anyAms.N}° a ${Math.round(anyAms.cm)} cm` : 'No realizado']);
     rows.push(['Graduación', S.far.skipped ? 'No realizado' : 'Punto lejano con letras sobre rojo y verde; astigmatismo con dial de líneas y rayas en dos orientaciones']);
   }
-  if (hasLens) rows.push(['Anteojos', 'Aumento de un círculo de puntos visto a través de la lente, con patrón calibrado en la pantalla de una compu']);
+  if (hasLens) {
+    const m = ['OD', 'OI'].map(e => ld[e] && ld[e].method).find(Boolean);
+    rows.push(['Anteojos', `Aumento de un círculo de puntos visto a través de la lente, con patrón en la pantalla de una compu; distancia ${m === 'tilt' ? 'por calibración de la cámara' : 'medida con cinta'}; estimación robusta sobre todo el barrido`]);
+  }
   $('#repMethod').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
   $('#reportTa').hidden = true;
 }
