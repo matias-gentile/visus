@@ -50,10 +50,12 @@ function render(o) {
   let L = null;
   if (g) {
     // Eje cámara→centro del patrón: en coordenadas de cámara apunta a t (= (0,0,D)).
-    const dl = g.u * o.D;                     // distancia de la cámara al plano de la lente
+    // La lente queda sobre la recta cámara → centro del patrón (no sobre el eje de la cámara), a la fracción u del camino.
+    const dl = g.u * t[2];                    // distancia de la cámara al plano de la lente
+    const onLine = [t[0] / t[2] * dl, t[1] / t[2] * dl];
     const rho = Math.atan2(-r1[1], r1[0]) / deg + (g.rollErr || 0); // horizontal del anteojo = horizontal de la pantalla
     const hx = [Math.cos(rho * deg), -Math.sin(rho * deg)], hy = [Math.sin(rho * deg), Math.cos(rho * deg)]; // ejes del anteojo en la imagen (y abajo)
-    const c0 = [g.off[0] * hx[0] + g.off[1] * hy[0], g.off[0] * hx[1] + g.off[1] * hy[1]];
+    const c0 = [onLine[0] + g.off[0] * hx[0] + g.off[1] * hy[0], onLine[1] + g.off[0] * hx[1] + g.off[1] * hy[1]];
     const sgn = g.side === 'OI' ? 1 : -1;     // la otra lente queda del lado nasal
     const pd = g.pd || 62;
     const c1 = [c0[0] + sgn * pd * hx[0], c0[1] + sgn * pd * hx[1]];

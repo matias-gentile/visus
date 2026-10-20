@@ -37,6 +37,18 @@ En una compu se abre `…/visus/#patron`, se calibra la pantalla con una tarjeta
 
 **Datos para revisar.** Después de cada medición, «Copiar datos para revisar» copia un JSON con la cámara, la escala y cada cuadro (distancia, aumentos, eje, puntos, posición del círculo).
 
+## Soporte impreso en 3D
+
+En `soporte/` está un accesorio para medir anteojos sin compu y sin calibrar nada. Es una base de 33 cm en tres piezas que encastran, con el patrón impreso en una punta, el celular apoyado en la otra y un atril en la mitad del camino donde se apoya el anteojo.
+
+- **Distancia fija:** el soporte fija la distancia en 30 cm, que es la única medida absoluta del método. Con el anteojo en la mitad, `P = (4/D)(1 − 1/M)`; además, ahí el resultado casi no cambia si el anteojo queda unos milímetros corrido.
+- **Sin calibración:** no importa la escala de impresión del patrón ni qué cámara use el celular, porque el aumento se mide como una proporción dentro de la imagen.
+- **Patrón propio:** tiene un círculo más chico y cuadrados más separados, para que se vean por arriba y por abajo del armazón. Está en `patron-soporte.pdf`, para A4.
+- **Archivos:** el modelo es paramétrico, en JavaScript con JSCAD (`soporte/soporte.js`). Genera los STL en `soporte/stl/` y un visor 3D en `soporte/index.html`. Todas las piezas entran en una cama de 180 × 180 mm y se imprimen sin soportes.
+- **En la app:** «Medir mis anteojos» → «Con el soporte». Mide con 3 segundos de imagen quieta.
+
+Para regenerar las piezas: `cd soporte && npm install && node soporte.js`. Para el patrón: `python3 soporte/patron.py`.
+
 ## Cómo funciona
 
 - Es un solo archivo, `index.html`, sin servidor ni base de datos.

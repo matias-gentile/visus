@@ -1,0 +1,264 @@
+<title>Soporte Visus</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Schibsted+Grotesk:wght@700;800&family=Spline+Sans+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una columna de lectura (máx. 46rem) con el visor 3D arriba; mismos tokens que la app Visus */
+:root{
+  --bg:#F1F4F5; --surface:#FFFFFF; --sunken:#E4EAEC; --ink:#10191F; --ink-2:#46545E; --ink-3:#71808A; --line:#D2DADE;
+  --accent:#145F6D; --accent-soft:#D6E8EB; --red:#C9363B; --green:#24875A; --stage:#E7ECEE;
+  --f-display:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"Spline Sans Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#0E1417; --surface:#162026; --sunken:#1E2A31; --ink:#E6EDF0; --ink-2:#A2B0B9; --ink-3:#7B8A94; --line:#2B3942; --accent:#64B6C5; --accent-soft:#173A42; --red:#E0585C; --green:#46B07F; --stage:#121B20; color-scheme:dark; }
+}
+:root[data-theme="dark"]{ --bg:#0E1417; --surface:#162026; --sunken:#1E2A31; --ink:#E6EDF0; --ink-2:#A2B0B9; --ink-3:#7B8A94; --line:#2B3942; --accent:#64B6C5; --accent-soft:#173A42; --red:#E0585C; --green:#46B07F; --stage:#121B20; color-scheme:dark; }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 var(--f-body);-webkit-font-smoothing:antialiased}
+main{max-width:46rem;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:28px 64px;display:flex;flex-direction:column;gap:28px}
+h1{font:800 clamp(1.9rem,6vw,2.6rem)/1.05 var(--f-display);letter-spacing:-.03em;margin:0;text-wrap:balance}
+h2{font:700 1.25rem/1.2 var(--f-display);letter-spacing:-.015em;margin:0 0 12px}
+p{margin:0}
+.eyebrow{font:500 .74rem/1.2 var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.lede{color:var(--ink-2);font-size:1.08rem;max-width:40rem}
+.hero{display:flex;flex-direction:column;gap:12px}
+.stage{position:relative;background:var(--stage);border:1px solid var(--line);border-radius:14px;overflow:hidden;touch-action:none}
+.stage canvas{display:block;width:100%;height:100%}
+.hud{position:absolute;left:12px;right:12px;bottom:10px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;pointer-events:none}
+.hud span{font:500 .72rem var(--f-mono);color:var(--ink-3);background:color-mix(in srgb, var(--surface) 80%, transparent);padding:3px 7px;border-radius:6px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-grid;grid-auto-flow:column;background:var(--sunken);border-radius:10px;padding:3px;gap:3px}
+.seg button{border:0;background:transparent;min-height:40px;padding:0 14px;border-radius:8px;font:700 .95rem var(--f-body);color:var(--ink-2);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.check{display:flex;gap:8px;align-items:center;font-weight:700;cursor:pointer;color:var(--ink-2);font-size:.95rem}
+.check input{width:20px;height:20px;accent-color:var(--accent);margin:0}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.dims{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.dims div{background:var(--surface);padding:12px 14px}
+.dims b{display:block;font:500 1.35rem/1.1 var(--f-mono);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.dims span{font-size:.85rem;color:var(--ink-2)}
+.parts{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.parts li{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line)}
+.parts i{width:12px;height:12px;border-radius:3px;border:1px solid var(--line);align-self:center}
+.parts small{display:block;color:var(--ink-3);font-size:.85rem}
+.parts .mono{font:500 .8rem var(--f-mono);color:var(--ink-3);white-space:nowrap}
+.parts a{color:var(--accent);font-weight:700}
+ol.steps{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:8px;color:var(--ink-2)}
+ol.steps b{color:var(--ink)}
+.note{background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-size:.95rem}
+.fine{color:var(--ink-3);font-size:.85rem}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<main>
+  <header class="hero">
+    <p class="eyebrow">Visus · accesorio para imprimir en 3D</p>
+    <h1>Soporte para medir anteojos</h1>
+    <p class="lede">Fija la distancia entre el celular y el patrón impreso, y deja el anteojo derecho justo en la mitad del camino. Así la medición ya no necesita calibraciones.</p>
+  </header>
+
+  <section>
+    <div class="stage" id="stage"><canvas id="cv" aria-label="Vista 3D del soporte"></canvas>
+      <div class="hud"><span id="hudL">Arrastrá para girar · rueda o pellizco para acercar</span><span id="hudR">mm</span></div>
+    </div>
+    <div class="controls" style="margin-top:12px">
+      <div class="seg" id="mode"><button data-m="armado" aria-pressed="true">Armado</button><button data-m="piezas" aria-pressed="false">Para imprimir</button></div>
+      <label class="check"><input type="checkbox" id="extras" checked> Celular, anteojo y patrón</label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Medidas que importan</h2>
+    <div class="dims" id="dims"></div>
+  </section>
+
+  <section>
+    <h2>Piezas</h2>
+    <ul class="parts" id="parts"></ul>
+    <p class="fine" style="margin-top:10px">Todas entran en una cama de 180 × 180 mm y se imprimen como se ven armadas, sin soportes. PLA, capa de 0,2 mm, 3 perímetros y 15 % de relleno.</p>
+  </section>
+
+  <section>
+    <h2>Cómo se usa</h2>
+    <ol class="steps">
+      <li><b>Uní las tres bases</b> por las colas de milano, sobre una mesa plana.</li>
+      <li><b>Imprimí el patrón</b> al 100 %, recortalo, pegalo sobre un cartón fino y apoyalo en el tablero, sobre el labio de abajo. Mejor en papel mate: el brillo genera reflejos.</li>
+      <li><b>Apoyá el celular acostado</b> en el estante, con la pantalla hacia vos, y corrélo hasta que la cámara mire por la ventana. Si la cámara queda baja, poné suplementos debajo.</li>
+      <li><b>Apoyá el anteojo</b> sobre los dos apoyos del atril, con las patillas abiertas hacia el celular, y corrélo de costado hasta que la lente quede frente a la ventana.</li>
+      <li>En Visus, entrá a <b>Medir mis anteojos → Con el soporte</b>. La app avisa cuando ve el círculo entero a través de la lente y mide en 3 segundos.</li>
+    </ol>
+  </section>
+
+  <p class="note">La graduación sale de la distancia fija del soporte (30 cm) y de cuánto la lente agranda o achica el círculo de puntos. Por eso no importa si la impresora cambia un poco el tamaño del patrón, ni qué cámara use el celular.</p>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/*DATOS*/
+</script>
+<script>
+(function () {
+  'use strict';
+  const D = window.SOPORTE, P = D.P;
+  const $ = s => document.querySelector(s);
+  const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  /* ---------- textos ---------- */
+  const dims = [
+    [`${P.D / 10} cm`, 'del patrón a la espalda del celular'],
+    [`${P.D * P.U / 10} cm`, 'del patrón al anteojo (mitad del camino)'],
+    [`${P.H0 / 10} cm`, 'altura del eje sobre la base'],
+    [`${P.card[0] / 10} × ${P.card[1] / 10} cm`, 'tarjeta del patrón']
+  ];
+  $('#dims').innerHTML = dims.map(([b, s]) => `<div><b>${b}</b><span>${s}</span></div>`).join('');
+  const onPages = /github\.io$/.test(location.hostname);
+  function bbox(tris) { const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; for (let i = 0; i < tris.length; i += 3) for (let k = 0; k < 3; k++) { mn[k] = Math.min(mn[k], tris[i + k]); mx[k] = Math.max(mx[k], tris[i + k]); } return [mn, mx]; }
+  $('#parts').innerHTML = D.parts.map(p => {
+    const [mn, mx] = bbox(p.tris), sz = [0, 1, 2].map(k => Math.round(mx[k] - mn[k]));
+    const link = onPages ? ` · <a href="stl/${p.file}" download>STL</a>` : '';
+    return `<li><i style="background:${p.color}"></i><span>${p.name}<small>${p.file}${link}</small></span><span class="mono">${sz[0]} × ${sz[1]} × ${sz[2]} mm</span></li>`;
+  }).join('') + (onPages ? `<li><i style="background:#fff"></i><span>Patrón para imprimir<small><a href="patron-soporte.pdf" download>patron-soporte.pdf</a> · A4, al 100 %</small></span><span class="mono">${P.card[0]} × ${P.card[1]} mm</span></li>` : '');
+
+  /* ---------- escena ---------- */
+  const cv = $('#cv'), stage = $('#stage');
+  const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(35, 1, 5, 5000);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9aa0, 0.9));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.7); sun.position.set(-300, 500, 400); scene.add(sun);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.25); fill.position.set(400, 200, -300); scene.add(fill);
+  // Ensamblado (X ancho, Y riel, Z arriba) → three.js (x, y arriba, z): (X, Z, −Y).
+  const toThree = (X, Y, Z) => [X, Z, -Y];
+
+  function meshFromTris(tris, color) {
+    const pos = new Float32Array(tris.length);
+    for (let i = 0; i < tris.length; i += 3) { const v = toThree(tris[i], tris[i + 1], tris[i + 2]); pos[i] = v[0]; pos[i + 1] = v[1]; pos[i + 2] = v[2]; }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0, flatShading: true }));
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(g, 30), new THREE.LineBasicMaterial({ color: 0x3d5560, transparent: true, opacity: 0.35 }));
+    const grp = new THREE.Group(); grp.add(m); grp.add(edges); return grp;
+  }
+  const partMeshes = D.parts.map(p => ({ p, obj: meshFromTris(p.tris, p.color), box: bbox(p.tris) }));
+  partMeshes.forEach(o => scene.add(o.obj));
+
+  /* ---------- maquetas: patrón, celular, anteojo, eje ---------- */
+  const extras = new THREE.Group(); scene.add(extras);
+  const rad = a => a * Math.PI / 180;
+  function patternTexture() {
+    const c = document.createElement('canvas'), s = 4; c.width = P.card[0] * s; c.height = P.card[1] * s;
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.fillStyle = '#000';
+    const cx = c.width / 2, cy = c.height / 2;
+    const pt = P.pattern, h = pt.mkSize / 2;
+    pt.mk.forEach(([x, y]) => g.fillRect(cx + (x - h) * s, cy + (y - h) * s, pt.mkSize * s, pt.mkSize * s));
+    for (let i = 0; i < pt.nDots; i++) { const a = i * 2 * Math.PI / pt.nDots; g.beginPath(); g.arc(cx + pt.R * Math.cos(a) * s, cy + pt.R * Math.sin(a) * s, pt.dotD / 2 * s, 0, 2 * Math.PI); g.fill(); }
+    return new THREE.CanvasTexture(c);
+  }
+  {
+    // Tarjeta del patrón: apoya en el tablero (inclinado 4°), con el centro a la altura del eje.
+    const card = new THREE.Mesh(new THREE.PlaneGeometry(P.card[0], P.card[1]), new THREE.MeshBasicMaterial({ map: patternTexture() }));
+    const t = rad(P.tiltPaper);
+    card.position.set(...toThree(0, 1, P.H0)); card.rotation.y = Math.PI; // la cara mira hacia el celular
+    card.rotation.x = t; extras.add(card); // el tablero se inclina hacia atrás
+    // Celular acostado, apoyado en la pared (inclinada 6°), con la cámara cerca del eje.
+    const ph = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(147, 71.5, 7.7), new THREE.MeshStandardMaterial({ color: 0x2b3238, roughness: 0.4 }));
+    body.position.set(52, 71.5 / 2, -7.7 / 2); ph.add(body);
+    const bump = new THREE.Mesh(new THREE.BoxGeometry(36, 36, 3.5), new THREE.MeshStandardMaterial({ color: 0x1b2024 }));
+    bump.position.set(0, 20, 3.5 / 2 - 0.2); ph.add(bump);
+    const lensM = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, 4, 32), new THREE.MeshStandardMaterial({ color: 0x0b0d0f, roughness: 0.2 }));
+    lensM.rotation.x = Math.PI / 2; lensM.position.set(0, 20, 3); ph.add(lensM);
+    const shim = 20; // con el suplemento de 20 mm, la cámara queda a la altura del eje
+    ph.position.set(...toThree(0, P.D, P.shelfTop + shim)); ph.rotation.x = rad(P.tiltPhone); extras.add(ph);
+    // Anteojo: dos aros, puente y patillas; la lente medida queda centrada en el eje.
+    const gl = new THREE.Group(), mat = new THREE.MeshStandardMaterial({ color: 0x5a3b2e, roughness: 0.5 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0xbfe3ea, transparent: true, opacity: 0.35, roughness: 0.05 });
+    // Rectángulo redondeado (aro o lente) dibujado sobre un Shape o un Path.
+    function rr(p, cx, w, h, r) {
+      p.moveTo(cx - w + r, -h); p.lineTo(cx + w - r, -h); p.quadraticCurveTo(cx + w, -h, cx + w, -h + r); p.lineTo(cx + w, h - r); p.quadraticCurveTo(cx + w, h, cx + w - r, h);
+      p.lineTo(cx - w + r, h); p.quadraticCurveTo(cx - w, h, cx - w, h - r); p.lineTo(cx - w, -h + r); p.quadraticCurveTo(cx - w, -h, cx - w + r, -h);
+      return p;
+    }
+    function rim(cx) {
+      const shape = rr(new THREE.Shape(), cx, 26, 19, 9);
+      shape.holes.push(rr(new THREE.Path(), cx, 23, 16, 7));
+      gl.add(new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 4, bevelEnabled: false }), mat));
+      const lens = new THREE.Mesh(new THREE.ShapeGeometry(rr(new THREE.Shape(), cx, 23, 16, 7)), glassMat); lens.position.z = 2; gl.add(lens);
+    }
+    rim(0); rim(62);
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(12, 4, 4), mat); bridge.position.set(31, 9, 2); gl.add(bridge);
+    [[-26, 1], [88, -1]].forEach(([x, s]) => {
+      const tmp = new THREE.Mesh(new THREE.BoxGeometry(3, 4, 140), mat);
+      tmp.position.set(x - s * 6, -14, -66); tmp.rotation.y = -s * rad(5); tmp.rotation.x = -rad(18); gl.add(tmp);
+    });
+    // Frente del anteojo contra la cara del atril (Y = 150), apoyado en los apoyos (Z = 57); la lente centrada a la altura del eje.
+    gl.position.set(...toThree(0, P.D * P.U + 4, P.pegTop + 8 + 19)); extras.add(gl); // con el suplemento de 8 mm
+    // Eje óptico: de la cámara al centro del patrón.
+    const axis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...toThree(0, P.D + 2, P.H0)), new THREE.Vector3(...toThree(0, 1, P.H0))]),
+      new THREE.LineDashedMaterial({ color: 0xc9363b, dashSize: 6, gapSize: 4 }));
+    axis.computeLineDistances(); extras.add(axis);
+  }
+
+  /* ---------- modos: armado y piezas para imprimir ---------- */
+  const center = new THREE.Vector3(); let lastMode = '';
+  function layout(mode, resetView) {
+    if (resetView || mode !== lastMode) { orbit.az = mode === 'armado' ? rad(-128) : 0; orbit.el = mode === 'armado' ? rad(26) : rad(35); }
+    lastMode = mode;
+    if (mode === 'armado') {
+      partMeshes.forEach(o => { o.obj.visible = !o.p.print; o.obj.position.set(0, 0, 0); });
+      extras.visible = $('#extras').checked;
+      center.set(0, 70, -150); orbit.dist = 720;
+    } else {
+      // Cada pieza apoyada en la cama, en fila, como se imprime.
+      let x = 0; const gap = 40;
+      partMeshes.forEach(o => {
+        const [mn, mx] = o.box; o.obj.visible = true;
+        const w = mx[0] - mn[0];
+        o.obj.position.set(x - mn[0], -mn[2], (mn[1] + mx[1]) / 2);
+        x += w + gap;
+      });
+      extras.visible = false;
+      center.set((x - gap) / 2, 40, 0); if (resetView || orbit.dist < 900) orbit.dist = (x - gap) * 1.15;
+    }
+    $('#hudR').textContent = mode === 'armado' ? 'eje óptico en rojo' : 'cada pieza apoyada como se imprime';
+    draw();
+  }
+
+  /* ---------- órbita con el puntero ---------- */
+  const orbit = { az: rad(-128), el: rad(26), dist: 720 };
+  function place() {
+    const ce = Math.cos(orbit.el);
+    camera.position.set(center.x + orbit.dist * ce * Math.sin(orbit.az), center.y + orbit.dist * Math.sin(orbit.el), center.z + orbit.dist * ce * Math.cos(orbit.az));
+    camera.lookAt(center);
+  }
+  function resize() {
+    const w = stage.clientWidth, h = Math.round(Math.min(window.innerHeight * 0.62, Math.max(300, w * 0.72)));
+    stage.style.height = h + 'px'; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); draw();
+  }
+  let raf = 0;
+  function draw() { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; place(); renderer.render(scene, camera); }); }
+  const pts = new Map(); let pinch0 = 0, dist0 = 0;
+  cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); dist0 = orbit.dist; } });
+  cv.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId)) return;
+    const prev = pts.get(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; const d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch0) orbit.dist = Math.max(250, Math.min(2500, dist0 * pinch0 / d)); }
+    else { orbit.az -= (e.clientX - prev[0]) * 0.008; orbit.el = Math.max(rad(-10), Math.min(rad(85), orbit.el + (e.clientY - prev[1]) * 0.006)); }
+    draw();
+  });
+  const up = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch0 = 0; };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('wheel', e => { e.preventDefault(); orbit.dist = Math.max(250, Math.min(2500, orbit.dist * Math.exp(e.deltaY * 0.001))); draw(); }, { passive: false });
+  cv.addEventListener('dblclick', () => layout(curMode, true));
+
+  let curMode = 'armado';
+  $('#mode').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; curMode = b.dataset.m; document.querySelectorAll('#mode button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); layout(curMode); });
+  $('#extras').addEventListener('change', () => layout(curMode));
+  window.addEventListener('resize', resize);
+  layout('armado'); resize();
+})();
+</script>

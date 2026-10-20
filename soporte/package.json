@@ -1,0 +1,12 @@
+{
+  "name": "visus-soporte",
+  "private": true,
+  "description": "Modelo paramétrico del soporte impreso en 3D para medir anteojos con Visus",
+  "scripts": {
+    "build": "node soporte.js"
+  },
+  "dependencies": {
+    "@jscad/modeling": "2.13.0",
+    "@jscad/stl-serializer": "2.1.23"
+  }
+}

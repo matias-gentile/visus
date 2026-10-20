@@ -17,6 +17,12 @@ Dentro de `index.html`:
 - **App:** navegación con `go(name)`. Cámara frontal: `Cam`, `frontLoop`, escala facial. Cámara trasera: `Lens`, `rearLoop`, `openRear`. Después vienen los tests de agudeza, Amsler y graduación, y el informe.
 - **`#patron`:** abre la página del patrón para la compu, con calibración por tarjeta y confirmación obligatoria.
 
+**`soporte/`** contiene el soporte impreso en 3D para medir anteojos:
+- `soporte.js`: modelo paramétrico en JSCAD. Las medidas están en `P` al principio. Genera `stl/*.stl` y el visor `index.html`, que tiene la geometría incrustada. Para correrlo: `npm install && node soporte.js`.
+- `visor.template.html`: plantilla del visor 3D (three.js r128 desde cdnjs, con órbita propia).
+- `patron.py`: genera `patron-soporte.pdf` (A4) con reportlab.
+- **El patrón del soporte está definido en tres lugares que tienen que coincidir:** `P.pattern` en `soporte.js`, `PAT_RIG` en `index.html` y las constantes de `patron.py`.
+
 ## Física y decisiones clave
 
 - **Distancia con la cámara frontal:** el iris mide 11,7 mm y sirve para calibrar una "escala facial" con rasgos grandes en 3D. Después se sigue la distancia con esos rasgos, con filtro de mediana. La selfie es opcional: su EXIF da `FocalLengthIn35mmFilm`.
@@ -24,10 +30,19 @@ Dentro de `index.html`:
 - **Graduación subjetiva:** punto lejano con test rojo-verde; astigmatismo con dial y rayas en dos orientaciones, combinados como matrices de potencia.
 - **Medición de anteojos (lensómetro):** con la lente a una fracción `u` del camino, `1/M = 1 − P·D·u(1−u)`; a mitad de camino, `P = (4/D)(1 − 1/M)`.
   - `M` es un cociente medido en la imagen, así que no depende de la cámara ni de la pantalla. **La única medida absoluta es `D`**, y un error en `D` pasa igual a `P`.
-  - Por eso hay dos modos de escala: **cinta métrica** (factor `c = D_cinta / D_estimada`, independiente de las calibraciones) y **sin cinta** (focal calibrada con vistas inclinadas y quietas, en al menos dos direcciones).
+  - Por eso hay tres modos de escala:
+    - **Con el soporte:** `D` es fija, `RIG.D = 301` mm (300 de la pieza, +2 de la pupila de la cámara dentro del celular, −1 del cartón). Usa el patrón `PAT_RIG` y la lente está siempre a mitad de camino, así que se estima con `lensStatic` sobre 3 s quietos.
+    - **Cinta métrica:** factor `c = D_cinta / D_estimada`, independiente de las calibraciones.
+    - **Sin cinta:** focal calibrada con vistas inclinadas y quietas, en al menos dos direcciones.
   - Ejes en TABO: la cámara mira la lente desde el lado del usuario (patillas hacia el celular), así que `eje = 180° − φ`.
   - `lensRobust`: cada cuadro da un vector de potencia `k·P` con `k ≤ 1`. Se toma la dirección común de los cuadros fuertes, se descartan los que no la siguen y el valor es la envolvente superior (promedio del 10 % más alto, sin contar el máximo).
 - **iPhone Pro:** Safari puede abrir el teleobjetivo, el gran angular o una cámara virtual. `openRear` busca la "Back Camera" principal.
+- **Geometría del soporte** (en `soporte.js`, con X a lo ancho, Y a lo largo del riel y Z hacia arriba):
+  - El tablero del patrón está en Y = 0, inclinado 4° hacia atrás; la tarjeta mide 110 × 150 y apoya en un labio a 5 mm.
+  - El atril está en Y = 150. Sus apoyos quedan a 50 mm de altura y se suben con suplementos de 4 y 8 mm.
+  - La pared del celular está en Y = 300, inclinada 3° hacia el patrón. El estante está a 40 mm, con suplementos de 5, 10 y 20 mm.
+  - El eje óptico va a 80 mm de altura.
+  - Los cuadrados del patrón quedan por arriba y por abajo del armazón para lentes de hasta unos 52 mm de alto, siempre que el anteojo esté centrado.
 
 ## Pruebas
 
@@ -36,8 +51,9 @@ Los scripts están en `tools/`. Corré los que correspondan antes de hacer commi
 ```bash
 node tools/test-lens.js --quick   # 3 barridos simulados (< 1 min); sin --quick, 24 barridos (~3 min). Esperado: todos exactos
 node tools/test-focal.js          # calibración de focal con obturador rodante; esperado: error < 2 %
-node tools/mkvideo.js             # genera tools/out/lens.y4m (cámara falsa: barrido de −2,50 a 50 cm)
-python3 tools/e2e-lens.py         # Chromium + cámara falsa, flujo completo; esperado: −2,50 esf
+node tools/test-rig.js            # modo soporte: 7 lentes, armazones de distintas alturas y escala de impresión corrida; esperado: 7/7
+node tools/mkvideo.js [--rig]     # genera tools/out/lens.y4m (barrido de −2,50 a 50 cm) o rig.y4m (soporte, −2,50 −0,75 × 160)
+python3 tools/e2e-lens.py [--rig] # Chromium + cámara falsa, flujo completo; esperado: −2,50 esf, o −2,50 −0,75 × 160 con --rig
 ```
 
 - `tools/sim.js` es un simulador físico con trazado de rayos: cámara pinhole con obturador rodante, anteojo de dos lentes delgadas con aro, y pantalla con bisel y fondo. Sirve para reproducir errores antes de tocar el algoritmo.
@@ -48,7 +64,12 @@ python3 tools/e2e-lens.py         # Chromium + cámara falsa, flujo completo; es
 
 1. **Validar con anteojos reales.** Con la versión anterior (sin cinta), un anteojo de −2,50 dio −3,00. Es un error de escala del 20 %, probablemente porque la pantalla de la compu no se calibró con la tarjeta. Falta repetir la medición con el modo cinta. Si vuelve a fallar, pedile a Matías los datos de «Copiar datos para revisar»: el JSON tiene cámara, escala y, por cuadro, `[t_ms, D_mm, M1, M2, phi1, puntos, cx_mm, cy_mm, mov]`.
 2. Confirmar en el iPhone 13 Pro que `openRear` elige la cámara principal: la línea gris de diagnóstico muestra el nombre de la cámara.
-3. Ideas que quedaron pendientes: panel para el oftalmólogo (varios informes y comparación en el tiempo) y un estudio de validación clínica.
+3. **Soporte 3D:** está diseñado y probado en simulación, pero todavía no se imprimió. Falta confirmar en la práctica:
+   - si el celular apoya firme con la inclinación de 3°;
+   - qué suplemento necesita el iPhone 13 Pro para que la cámara quede a 80 mm;
+   - si la pupila de la cámara está realmente a unos 2 mm dentro del celular (ajustar `RIG.D` si hace falta);
+   - el ajuste de las colas de milano (`P.clear`).
+4. Ideas que quedaron pendientes: panel para el oftalmólogo (varios informes y comparación en el tiempo) y un estudio de validación clínica.
 
 ## Convenciones
 
