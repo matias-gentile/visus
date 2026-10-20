@@ -1,0 +1,276 @@
+<title>Estación de autoexamen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Schibsted+Grotesk:wght@700;800&family=Spline+Sans+Mono:wght@400;500&display=swap">
+<style>
+/* Una columna de lectura (máx. 46rem) con el visor 3D arriba; mismos tokens que la app Visus */
+:root{
+  --bg:#F1F4F5; --surface:#FFFFFF; --sunken:#E4EAEC; --ink:#10191F; --ink-2:#46545E; --ink-3:#71808A; --line:#D2DADE;
+  --accent:#145F6D; --accent-soft:#D6E8EB; --red:#C9363B; --green:#24875A; --stage:#E7ECEE;
+  --f-display:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"Spline Sans Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#0E1417; --surface:#162026; --sunken:#1E2A31; --ink:#E6EDF0; --ink-2:#A2B0B9; --ink-3:#7B8A94; --line:#2B3942; --accent:#64B6C5; --accent-soft:#173A42; --red:#E0585C; --green:#46B07F; --stage:#121B20; color-scheme:dark; }
+}
+:root[data-theme="dark"]{ --bg:#0E1417; --surface:#162026; --sunken:#1E2A31; --ink:#E6EDF0; --ink-2:#A2B0B9; --ink-3:#7B8A94; --line:#2B3942; --accent:#64B6C5; --accent-soft:#173A42; --red:#E0585C; --green:#46B07F; --stage:#121B20; color-scheme:dark; }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 var(--f-body);-webkit-font-smoothing:antialiased}
+main{max-width:46rem;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:28px 64px;display:flex;flex-direction:column;gap:28px}
+h1{font:800 clamp(1.9rem,6vw,2.6rem)/1.05 var(--f-display);letter-spacing:-.03em;margin:0;text-wrap:balance}
+h2{font:700 1.25rem/1.2 var(--f-display);letter-spacing:-.015em;margin:0 0 12px}
+p{margin:0}
+.eyebrow{font:500 .74rem/1.2 var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.lede{color:var(--ink-2);font-size:1.08rem;max-width:40rem}
+.hero{display:flex;flex-direction:column;gap:12px}
+.stage{position:relative;background:var(--stage);border:1px solid var(--line);border-radius:14px;overflow:hidden;touch-action:none}
+.stage canvas{display:block;width:100%;height:100%}
+.hud{position:absolute;left:12px;right:12px;bottom:10px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;pointer-events:none}
+.hud span{font:500 .72rem var(--f-mono);color:var(--ink-3);background:color-mix(in srgb, var(--surface) 80%, transparent);padding:3px 7px;border-radius:6px}
+.controls{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-grid;grid-auto-flow:column;background:var(--sunken);border-radius:10px;padding:3px;gap:3px}
+.seg button{border:0;background:transparent;min-height:40px;padding:0 14px;border-radius:8px;font:700 .95rem var(--f-body);color:var(--ink-2);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.check{display:flex;gap:8px;align-items:center;font-weight:700;cursor:pointer;color:var(--ink-2);font-size:.95rem}
+.check input{width:20px;height:20px;accent-color:var(--accent);margin:0}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.dims{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.dims div{background:var(--surface);padding:12px 14px}
+.dims b{display:block;font:500 1.35rem/1.1 var(--f-mono);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.dims span{font-size:.85rem;color:var(--ink-2)}
+.parts{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.parts li{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line)}
+.parts i{width:12px;height:12px;border-radius:3px;border:1px solid var(--line);align-self:center}
+.parts small{display:block;color:var(--ink-3);font-size:.85rem}
+.parts .mono{font:500 .8rem var(--f-mono);color:var(--ink-3);white-space:nowrap}
+.parts a{color:var(--accent);font-weight:700}
+ol.steps{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:8px;color:var(--ink-2)}
+ol.steps b{color:var(--ink)}
+.note{background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-size:.95rem}
+.fine{color:var(--ink-3);font-size:.85rem}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<main>
+  <header class="hero">
+    <p class="eyebrow">Visus · accesorio para imprimir en 3D</p>
+    <h1>Estación de autoexamen</h1>
+    <p class="lede">Apoyás el mentón y la frente, y el celular queda en un carro sobre un riel con escala. La distancia la pone la estación, la paleta tapa un ojo sin usar la mano y la placa estenopeica dice si lo que falla es la graduación.</p>
+  </header>
+
+  <section>
+    <div class="stage" id="stage"><canvas id="cv" aria-label="Vista 3D de la estación"></canvas>
+      <div class="hud"><span id="hudL">Arrastrá para girar · rueda o pellizco para acercar</span><span id="hudR">mm</span></div>
+    </div>
+    <div class="controls" style="margin-top:12px">
+      <div class="seg" id="mode"><button data-m="armado" aria-pressed="true">Armado</button><button data-m="piezas" aria-pressed="false">Para imprimir</button></div>
+      <div class="seg" id="plate"><button data-p="paleta" aria-pressed="true">Con la paleta</button><button data-p="estenopeico" aria-pressed="false">Con el estenopeico</button></div>
+      <label class="check"><input type="checkbox" id="extras" checked> Cabeza y celular</label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Medidas que importan</h2>
+    <div class="dims" id="dims"></div>
+  </section>
+
+  <section>
+    <h2>Piezas</h2>
+    <ul class="parts" id="parts"></ul>
+    <p class="fine" style="margin-top:10px">Todas entran en una cama de 180 × 180 mm y se imprimen sin soportes, en la posición que indica cada una. PLA, capa de 0,2 mm, 3 perímetros y 15 % de relleno. El tramo 4 es opcional: estira el riel de 50 a 66 cm para medir miopías desde −1,50.</p>
+  </section>
+
+  <section>
+    <h2>Cómo se arma</h2>
+    <ol class="steps">
+      <li><b>Uní el cabezal y los tramos</b> en orden (1, 2, 3…) por las colas de milano, sobre una superficie plana.</li>
+      <li><b>Encastrá el marco</b> en los dos encastres del cabezal, con el visor hacia el riel.</li>
+      <li><b>Pasá el carro</b> por la punta del riel y poné un tope en el último agujero, para que no se salga.</li>
+      <li><b>Colgá la paleta en el visor</b>, con la perilla hacia adelante: el borde de arriba entra en la ranura y el de abajo apoya en la repisa, detrás del bordecito. Para sacarla, levantala apenas, sacá el borde de abajo hacia afuera y bajala. La placa estenopeica se pone igual.</li>
+      <li>Opcional: pasá un fibrón por la escala grabada del riel y limpiá lo que sobra: se lee mucho mejor.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Cómo se usa</h2>
+    <ol class="steps">
+      <li><b>Apoyá la estación entera</b> sobre algo firme y plano. Para no agacharte tanto, ponela más alta: por ejemplo, sobre una tabla apoyada en dos pilas de libros.</li>
+      <li><b>Poné el celular en el carro</b>, parado, con la pantalla hacia vos y centrado con la muesca del labio.</li>
+      <li><b>Apoyá el mentón y la frente.</b> Si usás anteojos, podés dejarlos puestos: el visor queda por delante.</li>
+      <li>En Visus, en el paso <b>Distancia</b>, elegí <b>Con la estación</b>. La app te dice dónde poner el carro, cuándo usar el tope y qué ojo tapar con la paleta.</li>
+    </ol>
+  </section>
+
+  <p class="note">La escala del riel marca la distancia entre tus ojos y la pantalla. Con la cabeza apoyada, el error es de unos 5 mm según la forma de la cara: a 40 cm es poco más del 1 %, mucho menos que lo que logra la cámara sola.</p>
+  <p class="note">La placa estenopeica tiene dos columnas de agujeritos de 1,4 mm, alternados, para que siempre haya uno frente a la pupila. Se usa junto con la paleta: la paleta tapa un ojo y la placa va delante del otro. Mirando por un agujerito la imagen se ve nítida aunque el ojo esté mal graduado: si así leés mejor, lo que falla es la graduación; si no mejorás, conviene consultar.</p>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/*DATOS*/
+</script>
+<script>
+(function () {
+  'use strict';
+  const D = window.ESTACION, P = D.P;
+  const $ = s => document.querySelector(s);
+  const fmt = (n, d = 0) => n.toLocaleString('es-AR', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+  /* ---------- textos ---------- */
+  const dims = [
+    [`${P.stops[1]} cm`, 'agudeza de cerca, con el carro contra el tope'],
+    [`${P.stops[0]} cm`, 'rejilla de Amsler, con el tope'],
+    [`7 a ${fmt(P.maxD[3])} cm`, `recorrido del carro con 3 tramos (${fmt(P.maxD[4])} cm con 4)`],
+    [`${fmt(P.Zeye / 10, 1)} cm`, 'altura de los ojos sobre la base']
+  ];
+  $('#dims').innerHTML = dims.map(([b, s]) => `<div><b>${b}</b><span>${s}</span></div>`).join('');
+  const onPages = /github\.io$/.test(location.hostname);
+  $('#parts').innerHTML = D.parts.map(p => {
+    const link = onPages ? ` · <a href="stl/${p.file}">STL</a>` : '';
+    const note = p.note ? ` · ${p.note}` : '';
+    return `<li><i style="background:${p.color}"></i><span>${p.name}<small>${p.file}${note}${link}</small></span><span class="mono">${p.size[0]} × ${p.size[1]} × ${p.size[2]} mm</span></li>`;
+  }).join('');
+
+  /* ---------- escena ---------- */
+  const cv = $('#cv'), stage = $('#stage');
+  const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(35, 1, 5, 6000);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9aa0, 0.9));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.7); sun.position.set(-300, 500, 400); scene.add(sun);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.25); fill.position.set(400, 200, -300); scene.add(fill);
+  // Ensamblado (X ancho, Y hacia adelante, Z arriba) → three.js (x, y arriba, z): (X, Z, −Y).
+  const toThree = (X, Y, Z) => [X, Z, -Y];
+  const rad = a => a * Math.PI / 180;
+
+  function meshFromTris(tris, color) {
+    const pos = new Float32Array(tris.length);
+    for (let i = 0; i < tris.length; i += 3) { const v = toThree(tris[i], tris[i + 1], tris[i + 2]); pos[i] = v[0]; pos[i + 1] = v[1]; pos[i + 2] = v[2]; }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0, flatShading: true }));
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(g, 30), new THREE.LineBasicMaterial({ color: 0x3d5560, transparent: true, opacity: 0.35 }));
+    const inner = new THREE.Group(); inner.add(m); inner.add(edges);
+    const grp = new THREE.Group(); grp.add(inner); return grp;
+  }
+  const partMeshes = D.parts.map(p => { const obj = meshFromTris(p.tris, p.color); scene.add(obj); return { p, obj }; });
+
+  /* ---------- maquetas: cabeza, celular, topes y línea de mirada ---------- */
+  const extras = new THREE.Group(); scene.add(extras);
+  {
+    const skin = new THREE.MeshStandardMaterial({ color: 0xd9b59a, roughness: 0.8, transparent: true, opacity: 0.4, depthWrite: false });
+    // Cabeza: elipsoide que toca el apoyo de frente; ojos con la córnea en Y = 0.
+    const head = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32), skin);
+    head.scale.set(75, 118, 98); head.position.set(...toThree(0, -86.8, P.Zeye + 10)); extras.add(head);
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(13, 50, 4), skin);
+    nose.position.set(...toThree(0, 13, P.Zeye - 37)); nose.rotation.set(rad(-110), rad(45), 0); extras.add(nose);
+    const white = new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.4 }), iris = new THREE.MeshStandardMaterial({ color: 0x3b5a66, roughness: 0.3 });
+    [-32, 32].forEach(x => {
+      const e = new THREE.Mesh(new THREE.SphereGeometry(12, 24, 16), white); e.position.set(...toThree(x, -12, P.Zeye)); extras.add(e);
+      const ir = new THREE.Mesh(new THREE.CircleGeometry(5.5, 24), iris); ir.position.set(...toThree(x, 0.05, P.Zeye)); extras.add(ir);
+    });
+    // Celular con funda (10 mm), parado en el carro a 40 cm, inclinado 6° como el respaldo.
+    const C = P.carro, ph = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(73, 148, C.t), new THREE.MeshStandardMaterial({ color: 0x2b3238, roughness: 0.4 }));
+    body.position.set(0, 148 / 2, -C.t / 2); ph.add(body);
+    const c = document.createElement('canvas'); c.width = 146; c.height = 292;
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, 146, 292); g.fillStyle = '#10191F';
+    const u = 5; g.translate(73 - 2.5 * u, 146 - 2.5 * u); [[0, 0, 1, 5], [0, 0, 5, 1], [0, 2, 5, 1], [0, 4, 5, 1]].forEach(([x, y, w, h]) => g.fillRect(x * u, y * u, w * u, h * u));
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(67, 140), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) }));
+    screen.position.set(0, 74, 0.1); ph.add(screen);
+    // El grupo tiene su origen en el borde de abajo de la pantalla; se inclina alrededor del respaldo a la altura de los ojos.
+    const pivot = new THREE.Group(); pivot.position.set(...toThree(0, 400 + C.t, P.Zeye)); extras.add(pivot);
+    ph.position.set(0, C.ledgeZ - P.Zeye, C.t); ph.rotation.x = 0; pivot.add(ph); pivot.rotation.x = rad(-C.tilt);
+    // Topes: uno detrás del carro (agudeza a 40 cm) y otro al final del riel.
+    const pegMat = new THREE.MeshStandardMaterial({ color: 0xf0c987, roughness: 0.6 });
+    const pegAt = y => { const k = new THREE.Mesh(new THREE.CylinderGeometry(P.peg.head / 2, P.peg.head / 2, 10, 24), pegMat); k.position.set(...toThree(0, y, P.rib.h + 5)); extras.add(k); };
+    pegAt(10 * P.stops[1] + C.rear + P.peg.head / 2 + 0.3); pegAt(P.rail.cabEnd + 3 * P.rail.seg - 12);
+    // Línea de mirada del ojo derecho al centro de la pantalla.
+    const los = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...toThree(32, 0, P.Zeye)), new THREE.Vector3(...toThree(0, 400, P.Zeye))]),
+      new THREE.LineDashedMaterial({ color: 0xc9363b, dashSize: 6, gapSize: 4 }));
+    los.computeLineDistances(); extras.add(los);
+  }
+
+  /* ---------- modos: armado y piezas para imprimir ---------- */
+  const center = new THREE.Vector3(); let lastMode = '', lastShown = '', curMode = 'armado', curPlate = 'paleta';
+  function layout(mode, resetView) {
+    if (resetView || mode !== lastMode) { orbit.az = mode === 'armado' ? rad(-128) : 0; orbit.el = mode === 'armado' ? rad(24) : rad(55); }
+    lastMode = mode;
+    if (mode === 'armado') {
+      partMeshes.forEach(o => {
+        const p = o.p;
+        o.obj.visible = !p.optional && !p.extra && (p.id !== 'estenopeico' || curPlate === 'estenopeico');
+        o.obj.rotation.set(0, 0, 0); o.obj.children[0].rotation.set(0, 0, 0); o.obj.children[0].position.set(0, 0, 0);
+        o.obj.position.set(...toThree(0, p.at || 0, 0));
+      });
+      extras.visible = $('#extras').checked;
+      center.set(0, 90, -240); if (resetView || orbit.dist > 1400 || orbit.dist < 300) orbit.dist = 1050;
+    } else {
+      // Cada pieza en la posición en que se imprime, apoyada en la cama, en filas.
+      let x = 0, z = 0, rowH = 0; const gap = 40, rowW = 820, all = new THREE.Box3();
+      partMeshes.forEach(o => {
+        const inner = o.obj.children[0];
+        o.obj.visible = true; o.obj.position.set(0, 0, 0);
+        inner.position.set(0, 0, 0); inner.rotation.set(rad(o.p.rx), 0, 0);
+        o.obj.updateMatrixWorld(true);
+        const bb = new THREE.Box3().setFromObject(inner);
+        const w = bb.max.x - bb.min.x, d = bb.max.z - bb.min.z;
+        if (x > 0 && x + w > rowW) { x = 0; z += rowH + gap; rowH = 0; }
+        inner.position.set(x - bb.min.x, -bb.min.y, z - bb.min.z);
+        o.obj.updateMatrixWorld(true); all.union(new THREE.Box3().setFromObject(inner));
+        x += w + gap; rowH = Math.max(rowH, d);
+      });
+      extras.visible = false;
+      all.getCenter(center); const size = all.getSize(new THREE.Vector3());
+      if (resetView || mode !== lastShown) orbit.dist = Math.max(size.x, size.z) * 1.3;
+    }
+    lastShown = mode;
+    $('#hudR').textContent = mode === 'armado' ? 'línea roja: mirada del ojo derecho a la pantalla' : 'cada pieza apoyada como se imprime';
+    $('#plate').hidden = mode !== 'armado';
+    draw();
+  }
+
+  /* ---------- órbita con el puntero ---------- */
+  const orbit = { az: rad(-128), el: rad(24), dist: 1050 };
+  function place() {
+    const ce = Math.cos(orbit.el);
+    camera.position.set(center.x + orbit.dist * ce * Math.sin(orbit.az), center.y + orbit.dist * Math.sin(orbit.el), center.z + orbit.dist * ce * Math.cos(orbit.az));
+    camera.lookAt(center);
+  }
+  function resize() {
+    const w = stage.clientWidth, h = Math.round(Math.min(window.innerHeight * 0.62, Math.max(300, w * 0.72)));
+    stage.style.height = h + 'px'; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); draw();
+  }
+  let raf = 0;
+  function draw() { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; place(); renderer.render(scene, camera); }); }
+  const pts = new Map(); let pinch0 = 0, dist0 = 0;
+  cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); dist0 = orbit.dist; } });
+  cv.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId)) return;
+    const prev = pts.get(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; const d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch0) orbit.dist = Math.max(150, Math.min(3000, dist0 * pinch0 / d)); }
+    else { orbit.az -= (e.clientX - prev[0]) * 0.008; orbit.el = Math.max(rad(-10), Math.min(rad(85), orbit.el + (e.clientY - prev[1]) * 0.006)); }
+    draw();
+  });
+  const up = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch0 = 0; };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('wheel', e => { e.preventDefault(); orbit.dist = Math.max(150, Math.min(3000, orbit.dist * Math.exp(e.deltaY * 0.001))); draw(); }, { passive: false });
+  cv.addEventListener('dblclick', () => layout(curMode, true));
+
+  const segClick = (sel, attr, fn) => $(sel).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    document.querySelectorAll(sel + ' button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    fn(b.dataset[attr]);
+  });
+  segClick('#mode', 'm', m => { curMode = m; layout(curMode); });
+  segClick('#plate', 'p', p => { curPlate = p; layout(curMode); });
+  $('#extras').addEventListener('change', () => layout(curMode));
+  window.addEventListener('resize', resize);
+  // Para revisar vistas desde afuera (pruebas): window.estacionVista({ az, el, dist, cx, cy, cz }).
+  window.estacionVista = v => { Object.assign(orbit, { az: rad(v.az), el: rad(v.el), dist: v.dist }); if (v.cx != null) center.set(v.cx, v.cy, v.cz); draw(); };
+  layout('armado'); resize();
+})();
+</script>

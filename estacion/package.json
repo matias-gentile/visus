@@ -1,0 +1,12 @@
+{
+  "name": "visus-estacion",
+  "private": true,
+  "description": "Modelo paramétrico de la estación de autoexamen de Visus, para imprimir en 3D",
+  "scripts": {
+    "build": "node estacion.js"
+  },
+  "dependencies": {
+    "@jscad/modeling": "2.13.0",
+    "@jscad/stl-serializer": "2.1.23"
+  }
+}

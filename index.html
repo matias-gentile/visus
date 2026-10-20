@@ -91,6 +91,7 @@ h3{font-family:var(--f-display);font-weight:700;font-size:1.02rem;letter-spacing
 .lede{font-size:1.1rem;color:var(--ink-2);max-width:36ch}
 .sub{color:var(--ink-2);margin-top:8px}
 .hint{color:var(--ink-3);font-size:.92rem}
+.hint a{color:var(--accent);font-weight:700}
 .fine{color:var(--ink-3);font-size:.85rem;line-height:1.45}
 .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 .dim{color:var(--ink-3)}
@@ -127,7 +128,7 @@ label.btn{cursor:pointer}
 .yn button{min-height:46px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:700 1rem var(--f-body);cursor:pointer}
 .yn button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .q.flag .yes[aria-pressed="true"]{background:var(--alert);border-color:var(--alert);color:var(--bg)}
-input[type="number"]{font:1.05rem var(--f-body);min-height:48px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:0 14px;width:100%}
+input[type="number"],input[inputmode="decimal"]{font:1.05rem var(--f-body);min-height:48px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:0 14px;width:100%}
 
 /* Notes */
 .urgentmark{width:56px;height:56px;border-radius:50%;background:var(--alert-soft);color:var(--alert);display:grid;place-items:center;font:800 1.9rem/1 var(--f-display)}
@@ -172,6 +173,9 @@ input[type="number"]{font:1.05rem var(--f-body);min-height:48px;border-radius:10
 .ea-iris{fill:var(--accent)}
 .ea-pupil{fill:var(--ink)}
 .ea-palm{fill:var(--sunken);stroke:var(--ink-3);stroke-width:2;stroke-dasharray:5 4}
+.ea-paddle{fill:var(--ink-2)}
+.ea-plate{fill:var(--warn-soft);stroke:var(--warn);stroke-width:1.5}
+.ea-hole{fill:var(--ink)}
 .ea-label{font:500 11px var(--f-mono);fill:var(--ink-3);letter-spacing:.06em}
 .ea-label.on{fill:var(--ink)}
 
@@ -285,11 +289,11 @@ textarea{width:100%;min-height:200px;font:.82rem/1.45 var(--f-mono);border:1.5px
         <h1>Medí tu vista con el celular y llevale el resultado a tu oftalmólogo.</h1>
         <p class="lede">Son unos 10 minutos. La cámara frontal mide a qué distancia estás y ajusta sola el tamaño de las figuras: no hace falta medir nada.</p>
       </div>
-      <p class="note" id="embedNote" hidden>Esta vista no permite usar la cámara. Para hacer el chequeo, abrí Visus desde el navegador del celular. Acá podés ver el informe de ejemplo.</p>
+      <p class="note" id="embedNote" hidden>Esta vista no permite usar la cámara. Para hacer el chequeo con la cámara o medir anteojos, abrí Visus desde el navegador del celular. Con la estación impresa en 3D, el chequeo funciona igual acá. También podés ver el informe de ejemplo.</p>
       <ol class="plan">
         <li><span class="n">1</span><span class="what">Preguntas de seguridad<small>Para descartar síntomas urgentes</small></span><span class="t">1 min</span></li>
         <li><span class="n">2</span><span class="what">Tamaño de pantalla<small>Con una tarjeta o la SUBE</small></span><span class="t">1 min</span></li>
-        <li><span class="n">3</span><span class="what">Distancia<small>La cámara aprende la escala de tu cara</small></span><span class="t">1 min</span></li>
+        <li><span class="n">3</span><span class="what">Distancia<small>La cámara aprende la escala de tu cara, o usás la estación impresa en 3D</small></span><span class="t">1 min</span></li>
         <li><span class="n">4</span><span class="what">Agudeza de cerca<small>Una E por vez, cada ojo por separado</small></span><span class="t">3 min</span></li>
         <li><span class="n">5</span><span class="what">Rejilla de Amsler<small>Revisa la zona central de la retina</small></span><span class="t">1 min</span></li>
         <li><span class="n">6</span><span class="what">Graduación (opcional)<small>Miopía y astigmatismo estimados</small></span><span class="t">3 min</span></li>
@@ -352,8 +356,20 @@ textarea{width:100%;min-height:200px;font:.82rem/1.45 var(--f-mono);border:1.5px
     <!-- Distancia -->
     <section class="screen" data-screen="distance" hidden>
       <div>
-        <h2>Activá la cámara</h2>
-        <p class="sub">Durante todo el chequeo, la cámara frontal mide a qué distancia estás y ajusta el tamaño de cada figura.</p>
+        <h2 id="distTitle">Activá la cámara</h2>
+        <p class="sub" id="distSub">Durante todo el chequeo, la cámara frontal mide a qué distancia estás y ajusta el tamaño de cada figura.</p>
+      </div>
+      <div class="seg" id="distMode"><button data-m="cam" aria-pressed="true">Con la cámara</button><button data-m="est" aria-pressed="false">Con la estación</button></div>
+      <div class="stack" id="estPanel" hidden>
+        <p>Con la estación de autoexamen impresa en 3D, la distancia la marca el riel y no hace falta la cámara.</p>
+        <ol class="steps">
+          <li>Apoyá la estación entera sobre algo firme y plano, a una altura en la que estés cómodo con el mentón y la frente apoyados.</li>
+          <li>Poné el celular parado en el carro, con la pantalla hacia vos y centrado con la muesca del labio.</li>
+          <li>Colgá la paleta en el visor. Si usás anteojos, podés dejarlos puestos.</li>
+        </ol>
+        <p><strong>¿Cuántos tramos tiene el riel?</strong></p>
+        <div class="seg" id="estRail"><button data-n="3" aria-pressed="true">3 · hasta 50 cm</button><button data-n="4" aria-pressed="false">4 · hasta 66 cm</button></div>
+        <p class="hint">Piezas para imprimir e instrucciones: <a href="https://matias-gentile.github.io/visus/estacion/" target="_blank" rel="noopener">estación de autoexamen</a>.</p>
       </div>
       <div class="stack" id="fPanel">
         <p class="hint">Opcional, para más precisión: sacate una selfie con la cámara del celular. Solo se lee el dato del lente de la cámara que guarda la foto; la imagen no se guarda ni se envía.</p>
@@ -391,6 +407,18 @@ textarea{width:100%;min-height:200px;font:.82rem/1.45 var(--f-mono);border:1.5px
         <p id="acEyeHow"></p>
         <p class="hint">Vas a ver una letra E dentro de un marco. Tocá el botón con la E que apunta para el mismo lado, o deslizá el dedo sobre la lámina. Si no la distinguís, tocá «No la veo»: adivinar no ayuda.</p>
         <button class="btn btn-primary" id="acStart">Empezar con este ojo</button>
+      </div>
+      <div id="acPh" class="stack" hidden>
+        <p class="eyebrow">Agudeza con estenopeico</p>
+        <h2 id="phTitle">Ojo derecho, con estenopeico</h2>
+        <div class="eyeart" id="phArt"></div>
+        <p id="phWhy"></p>
+        <p id="phHow"></p>
+        <p class="hint">Subí el brillo de la pantalla al máximo: por el agujerito entra poca luz. Si ves dos letras, corré apenas la placa hasta ver una sola.</p>
+        <div class="actions">
+          <button class="btn btn-primary" id="phStart">Empezar con el estenopeico</button>
+          <button class="btn btn-ghost" id="phSkip">Saltar este paso</button>
+        </div>
       </div>
       <div id="acTest" class="stack" hidden>
         <div class="chart" id="acChart">
@@ -435,7 +463,7 @@ textarea{width:100%;min-height:200px;font:.82rem/1.45 var(--f-mono);border:1.5px
         <p>Un ojo miope ve nítido solo hasta cierta distancia: el punto lejano. Con la cámara midiendo la distancia, la graduación sale de 1 dividido esa distancia en metros. Después, un dibujo de líneas estima el astigmatismo.</p>
         <p class="formula mono">50 cm → −2,00 D · 33 cm → −3,00 D · 25 cm → −4,00 D</p>
         <p class="note" id="farGlasses" hidden>Sacate los anteojos o lentes de contacto para este paso.</p>
-        <p class="hint">Detecta miopía de −1,50 D en adelante (el brazo no llega más lejos) y no mide hipermetropía. En menores de 30 años puede dar algo más de miopía de la real.</p>
+        <p class="hint" id="farRange">Detecta miopía de −1,50 D en adelante (el brazo no llega más lejos) y no mide hipermetropía. En menores de 30 años puede dar algo más de miopía de la real.</p>
         <div class="actions">
           <button class="btn btn-primary" id="farDo">Hacer la estimación</button>
           <button class="btn btn-ghost" id="farSkip">Saltar e ir al informe</button>
@@ -452,7 +480,11 @@ textarea{width:100%;min-height:200px;font:.82rem/1.45 var(--f-mono);border:1.5px
         <p class="eyebrow" id="duoStep">Paso 1 · Punto lejano</p>
         <div class="duo"><div class="r"><svg id="duoR" viewBox="0 0 25 5" role="img" aria-label="Letras sobre rojo"></svg></div><div class="g"><svg id="duoG" viewBox="0 0 25 5" role="img" aria-label="Letras sobre verde"></svg></div></div>
         <div class="readout small"><span class="v" id="duoLive">—</span></div>
-        <p>Estirá el brazo con el celular. Si las letras se ven borrosas, acercalo despacio hasta que las letras sobre rojo y sobre verde se vean igual de nítidas, y tocá el botón.</p>
+        <p id="duoHow">Estirá el brazo con el celular. Si las letras se ven borrosas, acercalo despacio hasta que las letras sobre rojo y sobre verde se vean igual de nítidas, y tocá el botón.</p>
+        <div class="stack" id="duoMarkBox" hidden>
+          <label for="duoMark"><strong>Marca de la escala</strong> (cm)</label>
+          <div class="inline"><input id="duoMark" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="Por ejemplo, 38,5"><button class="btn btn-primary" id="duoMarkOk">Listo</button></div>
+        </div>
         <div class="actions">
           <button class="btn btn-primary" id="duoEqual">Ahora se ven igual de nítidas</button>
           <button class="btn btn-ghost" id="duoSharp">Ya se veían nítidas con el brazo estirado</button>
@@ -471,7 +503,11 @@ textarea{width:100%;min-height:200px;font:.82rem/1.45 var(--f-mono);border:1.5px
         <p class="eyebrow" id="gratStep">Paso 3 · Rayas</p>
         <div class="chart"><svg id="gratSvg" class="grat" role="img" aria-label="Rayas"></svg></div>
         <div class="readout small"><span class="v" id="gratLive">—</span></div>
-        <p>Alejá el celular hasta que las rayas se mezclen en gris. Después acercalo despacio y tocá el botón apenas vuelvas a distinguir las rayas.</p>
+        <p id="gratHow">Alejá el celular hasta que las rayas se mezclen en gris. Después acercalo despacio y tocá el botón apenas vuelvas a distinguir las rayas.</p>
+        <div class="stack" id="gratMarkBox" hidden>
+          <label for="gratMark"><strong>Marca de la escala</strong> (cm)</label>
+          <div class="inline"><input id="gratMark" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="Por ejemplo, 36"><button class="btn btn-primary" id="gratMarkOk">Listo</button></div>
+        </div>
         <div class="actions">
           <button class="btn btn-primary" id="gratClear">Ahora distingo las rayas</button>
           <button class="btn btn-ghost" id="gratSharp">Nunca se mezclan, ni con el brazo estirado</button>
@@ -982,12 +1018,20 @@ const store = {
   get(k) { try { const v = localStorage.getItem('visus.' + k); return v == null ? null : JSON.parse(v); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem('visus.' + k, JSON.stringify(v)); } catch (e) {} }
 };
+// Estación de autoexamen impresa en 3D (carpeta estacion/): distancias fijas con el tope y alcance del riel según los tramos.
+const EST = { acuity: 40, amsler: 30, min: 7, max: { 3: 50, 4: 66 } };
+const Station = { on: store.get('station') === true, rail: store.get('stationRail') === 4 ? 4 : 3, phIn: false };
+const stMax = () => EST.max[Station.rail];
+// El punto lejano se mide desde la córnea; la graduación de anteojos se expresa en su plano, 12 mm por delante.
+const VERTEX_CM = 1.2;
+const rxAt = cm => VC.q4(-100 / (cm - VERTEX_CM));
+const PH_MIN = 0.2; // agudeza (logMAR) desde la que se ofrece repetir con el estenopeico: 20/32 o peor
 const coarse = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
 const camBlocked = (() => { try { return !!(document.featurePolicy && !document.featurePolicy.allowsFeature('camera')); } catch (e) { return false; } })();
 
 function freshState() {
   return {
-    screen: 'welcome', example: false,
+    screen: 'welcome', example: false, station: false,
     triage: { sudden: null, pain: null, flashes: null, trauma: null },
     age: null, wears: null, wearingNow: null,
     acuity: { OD: null, OI: null }, amsler: { OD: null, OI: null }, far: { OD: null, OI: null, skipped: false },
@@ -1148,20 +1192,42 @@ $('#selfieIn').addEventListener('change', e => onPhoto(e.target, 'front'));
 function enterDistance() {
   setIrisSel('both');
   renderFState();
-  $('#distanceNext').disabled = !(Cam.on && Cam.K);
   if (Cam.mode === 'rear') stopCamera();
   if (camBlocked && !Cam.on) camUnavailable('embed', 'front');
   $('#scalePanel').hidden = !(Cam.on && Cam.mode === 'front');
   updatePrecision();
+  renderDistMode();
 }
-$('#distanceNext').addEventListener('click', () => go('acuity'));
+function renderDistMode() {
+  const st = Station.on;
+  $$('#distMode button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.m === 'est') === st)));
+  $$('#estRail button').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.n) === Station.rail)));
+  $('#estPanel').hidden = !st; $('#fPanel').hidden = st; $('#camPanel').hidden = st;
+  $('#distTitle').textContent = st ? 'Armá la estación' : 'Activá la cámara';
+  $('#distSub').textContent = st ? 'La estación sostiene tu cabeza a una distancia conocida de la pantalla, y la paleta tapa un ojo sin usar la mano.'
+    : 'Durante todo el chequeo, la cámara frontal mide a qué distancia estás y ajusta el tamaño de cada figura.';
+  $('#distanceNext').disabled = st ? false : !(Cam.on && Cam.K);
+}
+$('#distMode').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  Station.on = b.dataset.m === 'est'; store.set('station', Station.on);
+  if (Station.on && Cam.on && Cam.mode === 'front') stopCamera();
+  renderDistMode(); positionCam();
+});
+$('#estRail').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  Station.rail = Number(b.dataset.n) === 4 ? 4 : 3; store.set('stationRail', Station.rail); renderDistMode();
+});
+$('#distanceNext').addEventListener('click', () => { S.station = Station.on; go('acuity'); });
 $('#camStart').addEventListener('click', () => startCamera('front'));
 $('#camRetry').addEventListener('click', () => { $('#camError').hidden = true; Cam.unavailable = false; startCamera('front'); });
 $('#calStart').addEventListener('click', startScaleCalib);
 function setHint(text) { const h = $('#readHint'); h.textContent = text; h.hidden = !text; }
 
 function faceOk() { return Cam.on && Cam.mode === 'front' && performance.now() - Cam.lastSeen < 800; }
+function stationCm() { return S.screen === 'amsler' ? EST.amsler : EST.acuity; }
 function currentCm() {
+  if (Station.on) return stationCm();
   if (!Cam.on || Cam.mode !== 'front') return null;
   if (faceOk()) return Cam.cm;
   if (Cam.lastCm && performance.now() - Cam.lastSeen < 15000) return Cam.lastCm;
@@ -1361,8 +1427,10 @@ function tick(force) {
   lastTick = now;
   const camLive = Cam.on && Cam.mode === 'front';
   const pill = $('#distpill');
-  pill.hidden = !(camLive && ['acuity', 'amsler', 'far'].includes(S.screen));
-  if (!pill.hidden) {
+  const stPill = Station.on && ['acuity', 'amsler'].includes(S.screen);
+  pill.hidden = !(stPill || (camLive && ['acuity', 'amsler', 'far'].includes(S.screen)));
+  if (stPill) { $('#distpillText').textContent = `${stationCm()} cm · estación`; pill.dataset.state = 'ok'; }
+  else if (!pill.hidden) {
     const cm = faceOk() ? Cam.cm : null;
     $('#distpillText').textContent = cm ? fmtCm(cm) : 'sin rostro';
     pill.dataset.state = !cm ? 'off' : (cm < RANGE.min || cm > RANGE.max ? 'warn' : 'ok');
@@ -1387,40 +1455,55 @@ function renderDistanceLive() {
 }
 
 /* ---------- eye cover ---------- */
-function eyesArt(eye) {
-  const eyeAt = (x, covered, on, label) => {
+// kind: 'palm' (palma de la mano), 'paddle' (paleta de la estación) o 'pinhole' (paleta y placa estenopeica).
+function eyesArt(eye, kind = 'palm') {
+  const eyeAt = (x, covered, on, label, ph) => {
     let s = `<path class="ea-lid" d="M${x - 32} 40 Q${x} 14 ${x + 32} 40 Q${x} 66 ${x - 32} 40 Z"/>`;
     s += `<circle class="ea-iris" cx="${x}" cy="40" r="11"/><circle class="ea-pupil" cx="${x}" cy="40" r="4.5"/>`;
-    if (covered) s += `<rect class="ea-palm" x="${x - 42}" y="8" width="84" height="64" rx="28"/>`;
+    if (covered) s += kind === 'palm' ? `<rect class="ea-palm" x="${x - 42}" y="8" width="84" height="64" rx="28"/>` : `<rect class="ea-paddle" x="${x - 40}" y="8" width="80" height="64" rx="5"/>`;
+    if (ph) {
+      s += `<rect class="ea-plate" x="${x - 24}" y="8" width="48" height="64" rx="5"/>`;
+      for (let k = 0; k < 6; k++) s += `<circle class="ea-hole" cx="${x - 5}" cy="${15 + k * 10}" r="1.7"/><circle class="ea-hole" cx="${x + 5}" cy="${20 + k * 10}" r="1.7"/>`;
+    }
     s += `<text class="ea-label${on ? ' on' : ''}" x="${x}" y="92" text-anchor="middle">${label}</text>`;
     return s;
   };
   // Vista tipo espejo: el ojo derecho aparece a la derecha.
-  const leftCovered = eye === 'OD';
-  return `<svg viewBox="0 0 240 100" role="img" aria-label="Ojo ${leftCovered ? 'izquierdo' : 'derecho'} tapado">` +
-    eyeAt(66, leftCovered, !leftCovered, leftCovered ? 'IZQ · TAPADO' : 'IZQUIERDO') +
-    eyeAt(174, !leftCovered, leftCovered, leftCovered ? 'DERECHO' : 'DER · TAPADO') + '</svg>';
+  const leftCovered = eye === 'OD', ph = kind === 'pinhole';
+  const open = ph ? ' · ESTENOP.' : '';
+  return `<svg viewBox="0 0 240 100" role="img" aria-label="Ojo ${leftCovered ? 'izquierdo' : 'derecho'} tapado${ph ? ' y estenopeico delante del otro' : ''}">` +
+    eyeAt(66, leftCovered, !leftCovered, leftCovered ? 'IZQ · TAPADO' : (ph ? 'IZQ' : 'IZQUIERDO') + open, ph && !leftCovered) +
+    eyeAt(174, !leftCovered, leftCovered, leftCovered ? (ph ? 'DER' : 'DERECHO') + open : 'DER · TAPADO', ph && leftCovered) + '</svg>';
 }
 function setCover(prefix, eye, how) {
   $('#' + prefix + 'EyeName').textContent = eye === 'OD' ? 'Ojo derecho (OD)' : 'Ojo izquierdo (OI)';
-  $('#' + prefix + 'EyeHow').textContent = how || `Tapate el ojo ${eye === 'OD' ? 'izquierdo' : 'derecho'} con la palma de la mano, sin apretar. Dejá los dos ojos abiertos detrás de la mano.`;
-  $('#' + prefix + 'EyeArt').innerHTML = eyesArt(eye);
+  $('#' + prefix + 'EyeHow').textContent = how || (Station.on ? `${phOut()}Corré la paleta hasta tapar el ojo ${eye === 'OD' ? 'izquierdo' : 'derecho'}.`
+    : `Tapate el ojo ${eye === 'OD' ? 'izquierdo' : 'derecho'} con la palma de la mano, sin apretar. Dejá los dos ojos abiertos detrás de la mano.`);
+  $('#' + prefix + 'EyeArt').innerHTML = eyesArt(eye, Station.on ? 'paddle' : 'palm');
 }
+// Si la placa estenopeica quedó puesta, el próximo paso empieza pidiendo sacarla.
+function phOut() { if (!Station.phIn) return ''; Station.phIn = false; return 'Sacá la placa estenopeica. '; }
 
 /* ---------- acuity ---------- */
 $$('#acPad button[data-dir]').forEach(b => { if (ROT[b.dataset.dir] != null) b.innerHTML = `<svg viewBox="0 0 5 5" aria-hidden="true">${eShape(ROT[b.dataset.dir])}</svg>`; });
 function acuityCover(eye) {
   A = null;
-  setCover('ac', eye);
-  $('#acCover').hidden = false; $('#acTest').hidden = true;
+  const other = eye === 'OD' ? 'izquierdo' : 'derecho';
+  setCover('ac', eye, Station.on ? `${phOut()}Corré la paleta hasta tapar el ojo ${other}. ` + (eye === 'OD'
+    ? `Poné un tope en el agujero ${EST.acuity} y apoyá el carro contra el tope: así queda a ${EST.acuity} cm y no se corre al tocar la pantalla.`
+    : `Dejá el carro contra el tope de ${EST.acuity}.`) : undefined);
+  $('#acCover').hidden = false; $('#acTest').hidden = true; $('#acPh').hidden = true;
   $('#acStart').onclick = () => startAcuity(eye);
   window.scrollTo(0, 0);
 }
-function startAcuity(eye) {
+// ph: repetir con la placa estenopeica; arranca 2 niveles por encima de lo que leyó sin ella.
+function startAcuity(eye, ph = false) {
   setIrisSel(eye);
-  A = { eye, phase: 'stair', lv: 6, curLv: 6, c: 0, w: 0, best: null, failed: new Set(), cur: null, last: null, n: 0, dist: [], limited: false, shownPx: 0, locked: false, queue: [], qItem: null, rc: {}, catchMiss: 0, catchN: 0 };
-  $('#acCover').hidden = true; $('#acTest').hidden = false;
-  $('#acEye').textContent = eye;
+  const prev = ph && S.acuity[eye], lv0 = prev && prev.lv != null ? Math.min(10, prev.lv + 2) : 6;
+  if (ph) Station.phIn = true;
+  A = { eye, ph, phase: 'stair', lv: lv0, curLv: lv0, c: 0, w: 0, best: null, failed: new Set(), cur: null, last: null, n: 0, dist: [], limited: false, shownPx: 0, locked: false, queue: [], qItem: null, rc: {}, catchMiss: 0, catchN: 0 };
+  $('#acCover').hidden = true; $('#acPh').hidden = true; $('#acTest').hidden = false;
+  $('#acEye').textContent = eye + (ph ? ' · estenopeico' : '');
   wake(true);
   nextE();
 }
@@ -1436,6 +1519,7 @@ function nextE() {
   $('#eSvg').style.visibility = 'visible';
 }
 function pauseReason(cm) {
+  if (Station.on) return '';
   if (Cam.yawBad && performance.now() - Cam.lastFace < 500) return 'Mirá la pantalla de frente, sin girar la cabeza.';
   if (cm == null) return 'No veo tu cara. Mirá la pantalla con buena luz de frente.';
   if (cm < RANGE.min) return `Estás a ${Math.round(cm)} cm. Alejá un poco el celular.`;
@@ -1452,7 +1536,7 @@ function sizeE(force) {
   if (force || !A.shownPx || Math.abs(px - A.shownPx) / A.shownPx > 0.015) {
     const svg = $('#eSvg'); svg.style.width = svg.style.height = px.toFixed(2) + 'px'; A.shownPx = px;
   }
-  $('#acDist').textContent = fmtCm(cm) + (!faceOk() ? ' · última medida' : '');
+  $('#acDist').textContent = fmtCm(cm) + (Station.on ? ' · estación' : !faceOk() ? ' · última medida' : '');
 }
 function answerE(dir) {
   if (!A || A.locked || !$('#acPause').hidden) return;
@@ -1504,10 +1588,28 @@ function finishAcuity() {
     va = A.canL1 ? L / 10 + 0.1 - 0.02 * (cL + (A.rc[L - 1] || 0)) : L / 10 + 0.02 * (5 - cL);
     va = Math.round(Math.max(-0.3, Math.min(1.1, va)) * 100) / 100;
   }
-  S.acuity[eye] = { va, lv: A.best, distCm: A.dist.length ? median(A.dist) : currentCm(), trials: A.n, limited: A.limited, reliable: A.catchMiss === 0, catchN: A.catchN };
+  const res = { va, lv: A.best, distCm: A.dist.length ? median(A.dist) : currentCm(), trials: A.n, limited: A.limited, reliable: A.catchMiss === 0, catchN: A.catchN, station: Station.on };
+  const ph = A.ph;
   A = null;
+  if (ph) { S.acuity[eye].ph = res; toast('Listo, con estenopeico'); return nextAfterAcuity(eye); }
+  S.acuity[eye] = res;
+  // Con la estación, si la visión dio 20/32 o peor, se repite con el estenopeico.
+  if (Station.on && (va == null || va >= PH_MIN)) return pinholeOffer(eye);
   toast(eye === 'OD' ? 'Ojo derecho listo' : 'Ojo izquierdo listo');
-  if (eye === 'OD') acuityCover('OI'); else go('amsler');
+  nextAfterAcuity(eye);
+}
+function nextAfterAcuity(eye) { if (eye === 'OD') acuityCover('OI'); else go('amsler'); }
+function pinholeOffer(eye) {
+  const r = S.acuity[eye], w = eyeWord(eye), other = eye === 'OD' ? 'izquierdo' : 'derecho';
+  $('#phTitle').textContent = `Ojo ${w}, con estenopeico`;
+  $('#phArt').innerHTML = eyesArt(eye, 'pinhole');
+  $('#phWhy').textContent = (r.va == null ? 'Con este ojo no llegaste a leer la E más grande.' : `Con este ojo leíste el equivalente a 20/${snellenDen(r.va)}.`)
+    + ' Mirando por un agujerito, la imagen se ve nítida aunque falte graduación: si así leés mejor, la diferencia se corrige con anteojos.';
+  $('#phHow').textContent = `Dejá la paleta tapando el ojo ${other} y colgá la placa estenopeica delante del ${w}. Mirá la pantalla y corré la placa despacio hasta verla por un agujerito.`;
+  $('#acCover').hidden = true; $('#acTest').hidden = true; $('#acPh').hidden = false;
+  $('#phStart').onclick = () => startAcuity(eye, true);
+  $('#phSkip').onclick = () => { r.phSkipped = true; nextAfterAcuity(eye); };
+  window.scrollTo(0, 0);
 }
 $('#acPad').addEventListener('click', e => { const b = e.target.closest('button'); if (b) answerE(b.dataset.dir); });
 let swipe = null;
@@ -1527,7 +1629,9 @@ document.addEventListener('keydown', e => {
 /* ---------- Amsler ---------- */
 function amslerCover(eye) {
   M = null;
-  setCover('am', eye);
+  const other = eye === 'OD' ? 'izquierdo' : 'derecho';
+  setCover('am', eye, Station.on ? `${phOut()}Corré la paleta hasta tapar el ojo ${other}. ` + (eye === 'OD'
+    ? `Pasá el tope al agujero ${EST.amsler} y apoyá el carro contra el tope.` : `Dejá el carro contra el tope de ${EST.amsler}.`) : undefined);
   $('#amCover').hidden = false; $('#amTest').hidden = true;
   $('#amStart').onclick = () => startAmsler(eye);
   window.scrollTo(0, 0);
@@ -1540,7 +1644,11 @@ function startAmsler(eye) {
   const k = 2 * Math.tan(0.5 * Math.PI / 180);
   // Siempre 10 × 10 celdas de 1°. Si a la distancia actual no entran, se achican y se indica a qué distancia acercar el celular.
   let N = 10, cell = cm * 10 * k * pxPerMm, target = null;
-  if (N * cell > avail) { cell = avail / N; target = Math.round(cell / pxPerMm / k / 10); }
+  if (N * cell > avail) {
+    // Con la estación la distancia es fija: se muestran menos cuadraditos de 1° (8 × 8 o 6 × 6) en lugar de pedir acercar el celular.
+    if (Station.on) { N = Math.max(6, 2 * Math.floor(avail / (2 * cell))); if (N * cell > avail) cell = avail / N; }
+    else { cell = avail / N; target = Math.round(cell / pxPerMm / k / 10); }
+  }
   M = { eye, N, cell, cm: target || cm, target, scaled: false, marked: new Set() };
   $('#amTarget').hidden = !target;
   if (target) $('#amTarget').textContent = `Acercá el celular a unos ${target} cm, la distancia habitual de lectura: así cada cuadradito cubre 1°.`;
@@ -1571,7 +1679,7 @@ $('#amClear').addEventListener('click', () => { if (M) { M.marked.clear(); drawA
 $('#amDone').addEventListener('click', () => {
   if (!M) return;
   const eye = M.eye;
-  S.amsler[eye] = { N: M.N, cm: M.cm, scaled: M.scaled, marked: [...M.marked] };
+  S.amsler[eye] = { N: M.N, cm: M.cm, scaled: M.scaled, marked: [...M.marked], station: Station.on };
   M = null;
   if (eye === 'OD') amslerCover('OI'); else go('far');
 });
@@ -1594,13 +1702,31 @@ function enterFar() {
   F = null;
   ['farIntro', 'farCover', 'farDuo', 'farDial', 'farGrat'].forEach(id => { $('#' + id).hidden = id !== 'farIntro'; });
   $('#farGlasses').hidden = !S.wearingNow;
+  $('#farRange').textContent = Station.on
+    ? `Con ${Station.rail} tramos de riel detecta miopía de ${fmtDio(rxAt(stMax()))} D en adelante, y no mide hipermetropía. En menores de 30 años puede dar algo más de miopía de la real.`
+    : 'Detecta miopía de −1,50 D en adelante (el brazo no llega más lejos) y no mide hipermetropía. En menores de 30 años puede dar algo más de miopía de la real.';
+  // Con la estación no hay cámara: la distancia se lee en la escala del riel.
+  ['#duoLive', '#dialLive', '#gratLive'].forEach(id => { $(id).parentElement.hidden = Station.on; });
+  $('#duoMarkBox').hidden = $('#gratMarkBox').hidden = !Station.on;
+  $('#duoEqual').hidden = $('#gratClear').hidden = Station.on;
+  $('#duoHow').textContent = Station.on
+    ? 'Con el carro lejos, las letras se ven borrosas. Acercalo despacio hasta que las letras sobre rojo y sobre verde se vean igual de nítidas. Ahí, mirá la escala del riel y anotá la marca que señala la flecha del carro.'
+    : 'Estirá el brazo con el celular. Si las letras se ven borrosas, acercalo despacio hasta que las letras sobre rojo y sobre verde se vean igual de nítidas, y tocá el botón.';
+  $('#duoSharp').textContent = Station.on ? 'Se ven nítidas con el carro al final del riel' : 'Ya se veían nítidas con el brazo estirado';
+  $('#gratHow').textContent = Station.on
+    ? 'Alejá el carro hasta que las rayas se mezclen en gris. Después acercalo despacio y, apenas vuelvas a distinguir las rayas, anotá la marca.'
+    : 'Alejá el celular hasta que las rayas se mezclen en gris. Después acercalo despacio y tocá el botón apenas vuelvas a distinguir las rayas.';
+  $('#gratSharp').textContent = Station.on ? 'Nunca se mezclan, ni con el carro al final' : 'Nunca se mezclan, ni con el brazo estirado';
 }
 function farShow(id) { ['farIntro', 'farCover', 'farDuo', 'farDial', 'farGrat'].forEach(x => { $('#' + x).hidden = x !== id; }); window.scrollTo(0, 0); }
 $('#farDo').addEventListener('click', () => farCover('OD'));
 $('#farSkip').addEventListener('click', () => { S.far.skipped = true; go('report'); });
 function farCover(eye) {
   F = null;
-  setCover('fa', eye, `Sin anteojos. Tapate el ojo ${eye === 'OD' ? 'izquierdo' : 'derecho'} con la palma de la mano y dejá los dos ojos abiertos. Necesitás las dos manos libres para el celular y la mano que tapa, así que apoyá el codo en una mesa.`);
+  const other = eye === 'OD' ? 'izquierdo' : 'derecho';
+  setCover('fa', eye, Station.on
+    ? `Sin anteojos. Corré la paleta hasta tapar el ojo ${other}. ` + (eye === 'OD' ? 'Sacá el tope del medio (dejá solo el del final del riel) y llevá el carro hasta el final.' : 'Llevá el carro hasta el final del riel.')
+    : `Sin anteojos. Tapate el ojo ${other} con la palma de la mano y dejá los dos ojos abiertos. Necesitás las dos manos libres para el celular y la mano que tapa, así que apoyá el codo en una mesa.`);
   farShow('farCover');
   $('#faStart').onclick = () => startFar(eye);
 }
@@ -1611,6 +1737,7 @@ function startFar(eye) {
   const row = () => { let g = '', last = null; for (let k = 0; k < 3; k++) { let d; do { d = DIRS[Math.random() * 4 | 0]; } while (d === last); last = d; g += `<g transform="translate(${k * 10} 0)">${eShape(ROT[d])}</g>`; } return g; };
   $('#duoR').innerHTML = row(); $('#duoG').innerHTML = row();
   $('#duoR').setAttribute('viewBox', '0 0 25 5'); $('#duoG').setAttribute('viewBox', '0 0 25 5');
+  $('#duoMark').value = ''; $('#gratMark').value = '';
   farShow('farDuo');
   wake(true);
   updateFarLive(true);
@@ -1618,9 +1745,10 @@ function startFar(eye) {
 function gratingPx(cm) { return cm * 10 * Math.tan((2 / 60) * Math.PI / 180) * pxPerMm; }
 function updateFarLive(force) {
   if (!F) return;
-  const live = faceOk() ? Cam.cm : null;
+  const live = !Station.on && faceOk() ? Cam.cm : null;
   if (live) F.lastCm = live;
-  const cm = live || F.lastCm || 40;
+  // Con la estación no se conoce la distancia mientras se corre el carro: letras para 33 cm y rayas para el punto lejano medido.
+  const cm = Station.on ? (F.step === 'duo' ? 33 : (F.se && F.se.cm) || 33) : (live || F.lastCm || 40);
   const label = live ? fmtCm(live) : 'sin rostro';
   if (F.step === 'duo') {
     $('#duoLive').textContent = label;
@@ -1637,18 +1765,31 @@ function updateFarLive(force) {
     if (force || !F.shown || Math.abs(w - F.shown) / F.shown > 0.03) { drawGrating(F.step === 'gpar' ? F.line : (F.line + 90) % 180, w); F.shown = w; }
   }
 }
+function recordDuo(cm) {
+  F.se = { cm, D: rxAt(cm), note: cm < 15 ? 'high' : (cm > 65 ? 'low' : '') };
+  // El dial se mira un poco más lejos que el punto lejano: con la estación, solo si el riel da para eso.
+  if (cm > 65 || (Station.on && Math.min(stMax(), Math.round(cm * 1.3)) - cm < 3)) return finishFar();
+  startDial();
+}
+// Marca de la escala del riel, en cm (acepta coma decimal).
+function readMark(id) {
+  const v = parseFloat(String($(id).value).replace(',', '.'));
+  if (!Number.isFinite(v) || v < EST.min || v > stMax() + 1) { toast(`Escribí la marca de la escala: un número entre ${EST.min} y ${stMax()}`); return null; }
+  return v;
+}
 $('#duoEqual').addEventListener('click', () => {
   const cm = liveCm(); if (!cm) { toast('No te veo: mirá a la cámara y probá de nuevo'); return; }
-  const D = VC.q4(-100 / cm);
-  F.se = { cm, D, note: cm < 15 ? 'high' : (cm > 65 ? 'low' : '') };
-  if (cm > 65) return finishFar();
-  startDial();
+  recordDuo(cm);
 });
-$('#duoSharp').addEventListener('click', () => { F.se = { cm: null, D: null, note: 'sharp' }; finishFar(); });
+$('#duoMarkOk').addEventListener('click', () => { const cm = readMark('#duoMark'); if (cm != null) recordDuo(cm); });
+[['#duoMark', '#duoMarkOk'], ['#gratMark', '#gratMarkOk']].forEach(([i, b]) => $(i).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $(b).click(); } }));
+$('#duoSharp').addEventListener('click', () => { F.se = { cm: null, D: null, note: 'sharp', limitCm: Station.on ? stMax() : 65 }; finishFar(); });
 function startDial() {
   F.step = 'dial'; F.shown = 0;
-  const target = Math.round(Math.min(75, F.se.cm * 1.3));
-  $('#dialHow').textContent = `Alejá el celular hasta unos ${target} cm, un poco más allá de donde las letras se veían bien, para que el dibujo quede apenas borroso.`;
+  const target = Math.round(Math.min(Station.on ? stMax() : 75, F.se.cm * 1.3));
+  $('#dialHow').textContent = Station.on
+    ? `Poné el carro en la marca ${target}, un poco más lejos de donde las letras se veían bien, para que el dibujo quede apenas borroso.`
+    : `Alejá el celular hasta unos ${target} cm, un poco más allá de donde las letras se veían bien, para que el dibujo quede apenas borroso.`;
   let s = '';
   DIAL.forEach(([lab, th]) => {
     const t = th * Math.PI / 180, dx = Math.cos(t), dy = -Math.sin(t), nx = -dy, ny = dx;
@@ -1677,16 +1818,17 @@ function drawGrating(theta, w) {
   svg.innerHTML = `<defs><clipPath id="gclip"><circle r="${R}"/></clipPath></defs><g clip-path="url(#gclip)"><g transform="rotate(${90 - theta})">${rects}</g></g>`;
 }
 function recordGrating(cm) {
-  if (F.step === 'gpar') { F.dPar = cm; F.step = 'gperp'; F.shown = 0; $('#gratStep').textContent = 'Paso 3 · Rayas (2 de 2)'; updateFarLive(true); window.scrollTo(0, 0); return; }
+  if (F.step === 'gpar') { F.dPar = cm; F.step = 'gperp'; F.shown = 0; $('#gratStep').textContent = 'Paso 3 · Rayas (2 de 2)'; $('#gratMark').value = ''; updateFarLive(true); window.scrollTo(0, 0); return; }
   F.dPerp = cm; finishFar();
 }
 $('#gratClear').addEventListener('click', () => { const cm = liveCm(); if (!cm) { toast('No te veo: mirá a la cámara y probá de nuevo'); return; } recordGrating(cm); });
 $('#gratSharp').addEventListener('click', () => recordGrating(null));
+$('#gratMarkOk').addEventListener('click', () => { const cm = readMark('#gratMark'); if (cm != null) recordGrating(cm); });
 function finishFar() {
-  const eye = F.eye, r = { cm: F.se ? F.se.cm : null, D: F.se ? F.se.D : null, note: F.se ? F.se.note : '' };
+  const eye = F.eye, r = { cm: F.se ? F.se.cm : null, D: F.se ? F.se.D : null, note: F.se ? F.se.note : '', limitCm: F.se && F.se.limitCm, station: Station.on };
   if (F.line != null && F.dPerp !== undefined) {
-    // Rayas paralelas a la línea θ resuelven el meridiano perpendicular (θ+90°).
-    const P = d => d ? -100 / d : 0;
+    // Rayas paralelas a la línea θ resuelven el meridiano perpendicular (θ+90°). Potencias en el plano de los anteojos.
+    const P = d => d ? -100 / (d - VERTEX_CM) : 0;
     const rx = VC.rxFromMeridians([{ P1: P(F.dPar), phi1: (F.line + 90) % 180, P2: P(F.dPerp), phi2: F.line }]);
     Object.assign(r, rx, { astig: true });
     // Las rayas paralelas a la línea más negra corresponden al meridiano menos miope: deberían resolverse más lejos.
@@ -2047,6 +2189,15 @@ function analyze() {
     else if (r.va >= 0.28) out.push({ sev: 'warn', t: `Ojo ${eyeWord(e)}: agudeza de cerca reducida (20/${snellenDen(r.va)})`, d: 'Conviene revisarlo en la próxima consulta.' });
     if (r.reliable === false) out.push({ sev: 'warn', t: `Ojo ${eyeWord(e)}: respuestas poco consistentes`, d: 'Falló alguna de las figuras de control, que eran fáciles. Conviene repetir el test con más calma.' });
   });
+  ['OD', 'OI'].forEach(e => {
+    const r = a[e]; if (!r || !r.ph) return;
+    const v0 = r.va == null ? 1.1 : r.va, v1 = r.ph.va == null ? 1.1 : r.ph.va, d = v0 - v1, w = eyeWord(e);
+    const sn = v => v >= 1.1 ? 'peor que 20/200' : '20/' + snellenDen(v);
+    if (d >= 0.2) out.push({ sev: 'info', t: `Ojo ${w}: mejora con el estenopeico (de ${sn(v0)} a ${sn(v1)})`, d: 'Mirando por un agujerito ve mejor: lo más probable es que la diferencia se corrija con la graduación adecuada.' });
+    else if (v1 >= 0.3) out.push({ sev: 'alert', t: `Ojo ${w}: ${d >= 0.1 ? 'mejora poco' : 'no mejora'} con el estenopeico (${sn(v1)})`, d: 'Mirando por un agujerito la visión sigue baja, así que puede haber una causa además de la graduación, por ejemplo cataratas o un problema de retina. Conviene una consulta.' });
+    else out.push({ sev: 'info', t: `Ojo ${w}: con el estenopeico, ${sn(v1)}`, d: d >= 0.1 ? 'Mejora un poco mirando por un agujerito: parte de la diferencia es de graduación.' : 'Con el agujerito ve parecido, así que la graduación explica poco de la diferencia.' });
+    if (r.ph.reliable === false) out.push({ sev: 'warn', t: `Ojo ${w}: respuestas poco consistentes con el estenopeico`, d: 'Falló alguna figura de control. Conviene repetir esa parte con más calma.' });
+  });
   if (a.OD && a.OI) {
     const v = r => r.va == null ? 1.2 : r.va;
     const diff = Math.abs(v(a.OD) - v(a.OI));
@@ -2073,12 +2224,26 @@ const dash = '<span class="dim">—</span>';
 const cells = {
   acu: e => { const r = S.acuity[e]; if (!r) return dash; if (r.va == null) return '&gt;1,0<small>logMAR</small>'; return `${fmtVA(r.va)}<small>logMAR${r.limited ? ' · tope de pantalla' : ''}${r.reliable === false ? ' · poco consistente' : ''}</small>`; },
   sn: e => { const r = S.acuity[e]; if (!r) return dash; if (r.va == null) return 'peor que 20/200'; return `20/${snellenDen(r.va)}<small>decimal ${fmtNum(Math.pow(10, -r.va), 2)}</small>`; },
-  dist: e => { const r = S.acuity[e]; return r && r.distCm ? fmtCm(r.distCm) : dash; },
+  dist: e => { const r = S.acuity[e]; return r && r.distCm ? fmtCm(r.distCm) + (r.station ? '<small>estación</small>' : '') : dash; },
+  ph: e => {
+    const r = S.acuity[e]; if (!r) return dash;
+    if (r.ph) {
+      const d = (r.va == null ? 1.1 : r.va) - (r.ph.va == null ? 1.1 : r.ph.va), n = Math.round(d * 10);
+      return `${r.ph.va == null ? '&gt;1,0' : fmtVA(r.ph.va)}<small>logMAR · ${n >= 1 ? `mejora ${n} ${n === 1 ? 'línea' : 'líneas'}` : 'sin mejora'}${r.ph.reliable === false ? ' · poco consistente' : ''}</small>`;
+    }
+    if (r.phSkipped) return '<span class="dim">No realizado</span>';
+    return r.station ? '<span class="dim">No hizo falta</span>' : dash;
+  },
   ams: e => { const m = S.amsler[e]; if (!m) return dash; return m.marked.length ? `<span class="t-alert">${m.marked.length} ${m.marked.length === 1 ? 'zona' : 'zonas'}</span><small>${amslerZones(e, m)}</small>` : 'Normal'; },
-  far: e => { const f = S.far[e]; if (!f) return S.far.skipped ? '<span class="dim">No realizado</span>' : dash; if (f.note === 'sharp') return 'Más allá del brazo'; return fmtCm(f.cm); },
-  rx: e => { const f = S.far[e]; if (!f) return dash; if (f.note === 'sharp') return 'Sin miopía detectable<small>menor a −1,50 D</small>'; return fmtRx(f) + `<small>equiv. esférico ${fmtD(f.se)}${f.note === 'high' ? ' · fuera de rango' : f.note === 'low' ? ' · poco confiable' : ''}</small>`; }
+  far: e => { const f = S.far[e]; if (!f) return S.far.skipped ? '<span class="dim">No realizado</span>' : dash; if (f.note === 'sharp') return f.station ? 'Más allá del riel' : 'Más allá del brazo'; return fmtCm(f.cm) + (f.station ? '<small>escala del riel</small>' : ''); },
+  rx: e => { const f = S.far[e]; if (!f) return dash; if (f.note === 'sharp') return `Sin miopía detectable<small>menor a ${fmtDio(rxAt(f.limitCm || 65))} D</small>`; return fmtRx(f) + `<small>equiv. esférico ${fmtD(f.se)}${f.note === 'high' ? ' · fuera de rango' : f.note === 'low' ? ' · poco confiable' : ''}</small>`; }
 };
 const ROWS = [['Agudeza de cerca', 'acu'], ['Equivalente', 'sn'], ['Distancia de prueba', 'dist'], ['Amsler', 'ams'], ['Punto lejano', 'far'], ['Graduación estimada', 'rx']];
+// La fila del estenopeico aparece cuando se usó la estación (o hay algún dato con estenopeico).
+function reportRows() {
+  const ph = ['OD', 'OI'].some(e => S.acuity[e] && (S.acuity[e].ph || S.acuity[e].station));
+  return ph ? [...ROWS.slice(0, 2), ['Con estenopeico', 'ph'], ...ROWS.slice(2)] : ROWS;
+}
 function miniMap(m) {
   const N = m.N;
   let s = `<svg viewBox="0 0 ${N} ${N}" role="img" aria-label="Rejilla con ${m.marked.length} zonas marcadas"><rect class="am-bg" width="${N}" height="${N}"/>`;
@@ -2096,7 +2261,7 @@ function renderReport() {
   $('#repEyes').hidden = !tested; $('#repMapsBox').hidden = !tested;
   const head = '<div class="h"></div><div class="h">OD<small>derecho</small></div><div class="h">OI<small>izquierdo</small></div>';
   let t = head;
-  ROWS.forEach(([label, key]) => { t += `<div class="k">${label}</div><div class="v">${cells[key]('OD')}</div><div class="v">${cells[key]('OI')}</div>`; });
+  reportRows().forEach(([label, key]) => { t += `<div class="k">${label}</div><div class="v">${cells[key]('OD')}</div><div class="v">${cells[key]('OI')}</div>`; });
   $('#repTable').innerHTML = t;
   $('#repLensBox').hidden = !hasLens;
   if (hasLens) {
@@ -2112,10 +2277,14 @@ function renderReport() {
   const rows = [];
   if (tested) {
     rows.push(['Pantalla', `${fmtNum(mt.px, 2)} px/mm · ${mt.pxCal ? 'calibrada con tarjeta' : 'sin calibrar'}`]);
-    rows.push(['Distancia', `Cámara frontal: escala facial calibrada con el iris (11,7 mm), seguida en cada figura${mt.fPhoto ? '; cámara calibrada con selfie' : ''}${mt.prec ? ` · precisión estimada ±${mt.prec} %` : ''}`]);
-    rows.push(['Agudeza', 'E con barras alrededor, puntaje letra por letra (0,02 logMAR) y 2 figuras de control por ojo']);
+    rows.push(['Distancia', S.station
+      ? `Estación de autoexamen impresa en 3D: mentón y frente apoyados, celular en un carro sobre un riel con escala. Agudeza a ${EST.acuity} cm y Amsler a ${EST.amsler} cm, con tope; ±5 mm según la forma de la cara`
+      : `Cámara frontal: escala facial calibrada con el iris (11,7 mm), seguida en cada figura${mt.fPhoto ? '; cámara calibrada con selfie' : ''}${mt.prec ? ` · precisión estimada ±${mt.prec} %` : ''}`]);
+    const anyPh = ['OD', 'OI'].some(e => S.acuity[e] && S.acuity[e].ph);
+    rows.push(['Agudeza', 'E con barras alrededor, puntaje letra por letra (0,02 logMAR) y 2 figuras de control por ojo'
+      + (S.station ? '; el otro ojo, tapado con la paleta' : '') + (anyPh ? '; repetida con estenopeico (agujeritos de 1,4 mm) si dio 20/32 o peor' : '')]);
     rows.push(['Amsler', anyAms ? `Rejilla central de ${anyAms.N}°×${anyAms.N}° a ${Math.round(anyAms.cm)} cm` : 'No realizado']);
-    rows.push(['Graduación', S.far.skipped ? 'No realizado' : 'Punto lejano con letras sobre rojo y verde; astigmatismo con dial de líneas y rayas en dos orientaciones']);
+    rows.push(['Graduación', S.far.skipped ? 'No realizado' : `Punto lejano con letras sobre rojo y verde${S.station ? ', leído en la escala del riel' : ''}; astigmatismo con dial de líneas y rayas en dos orientaciones; potencias referidas al plano de los anteojos (12 mm)`]);
   }
   if (hasLens) {
     const m = ['OD', 'OI'].map(e => ld[e] && ld[e].method).find(Boolean);
@@ -2137,7 +2306,7 @@ function reportText() {
   analyze().forEach(f => L.push(`- [${SEV_LABEL[f.sev]}] ${f.t}. ${f.d}`));
   if (didTests()) {
     L.push(''); L.push('RESULTADOS POR OJO');
-    ROWS.forEach(([label, key]) => L.push(`${label}: OD ${plain(cells[key]('OD'))} | OI ${plain(cells[key]('OI'))}`));
+    reportRows().forEach(([label, key]) => L.push(`${label}: OD ${plain(cells[key]('OD'))} | OI ${plain(cells[key]('OI'))}`));
   }
   if (ld.OD || ld.OI) {
     L.push(''); L.push('ANTEOJOS ACTUALES (MEDIDOS)');
@@ -2199,8 +2368,9 @@ $('#exampleBtn').addEventListener('click', () => {
 });
 
 if (camBlocked) {
+  // Sin cámara se puede hacer igual el chequeo con la estación; medir anteojos necesita la cámara trasera.
   $('#embedNote').hidden = false;
-  $('#startBtn').disabled = true; $('#lensBtn').disabled = true;
+  $('#lensBtn').disabled = true;
 }
 renderCard(false);
 function route() { if (location.hash === '#patron') go('patcal'); }

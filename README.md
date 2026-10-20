@@ -8,14 +8,14 @@ Prototipo de chequeo visual guiado desde el celular. La persona hace los tests e
 
 1. **Preguntas de seguridad.** Si aparece un síntoma de alarma (pérdida brusca de visión, dolor, destellos, golpe o químico), el test se frena y se indica consulta urgente.
 2. **Calibración de pantalla** con una tarjeta de tamaño estándar (DNI, SUBE, crédito). Se guarda en el dispositivo.
-3. **Distancia con la cámara frontal**, en tres capas:
+3. **Distancia**, con la estación de autoexamen impresa en 3D (ver abajo) o con la cámara frontal. Con la cámara, en tres capas:
    - *Escala facial:* durante unos segundos, sin anteojos, se mide el iris (≈ 11,7 mm en adultos) y con eso se calcula cuántos milímetros tienen rasgos grandes de la cara (ancho de cara, sienes, nariz). Después la distancia se sigue con esos rasgos, que son unas 25 veces más grandes que el iris, se miden en 3D y no quedan detrás de las lentes ni de la mano que tapa un ojo.
    - *Cámara calibrada con una selfie (opcional):* se lee del EXIF de la foto la distancia focal equivalente a 35 mm, que da el ángulo real de la cámara. Baja el error estimado de alrededor del ±13 % a alrededor del ±5 %.
    - *Filtro robusto:* mediana móvil más suavizado, pausa si la cabeza está girada o la distancia sale de rango.
-4. **Agudeza de cerca** por ojo: E con barras alrededor (amontonamiento, como en los tests clínicos), búsqueda adaptativa, fase fina con puntaje letra por letra (0,02 logMAR) y 2 figuras de control para detectar respuestas al azar.
+4. **Agudeza de cerca** por ojo: E con barras alrededor (amontonamiento, como en los tests clínicos), búsqueda adaptativa, fase fina con puntaje letra por letra (0,02 logMAR) y 2 figuras de control para detectar respuestas al azar. Con la estación, si un ojo da 20/32 o peor, se repite mirando por la placa estenopeica.
 5. **Rejilla de Amsler** central de 10° × 10° a unos 30 cm.
 6. **Graduación estimada (opcional, solo miopía):**
-   - punto lejano con letras sobre rojo y verde (test bicromático): la distancia a la que se ven igual de nítidas da el equivalente esférico;
+   - punto lejano con letras sobre rojo y verde (test bicromático): la distancia a la que se ven igual de nítidas da el equivalente esférico, referido al plano de los anteojos (12 mm delante de la córnea);
    - astigmatismo: dial de líneas para elegir el eje y rayas en dos orientaciones para medir cada meridiano; se combinan como matrices de potencia en esfera, cilindro y eje.
 7. **Informe** con hallazgos priorizados, resultados por ojo y método, para copiar o descargar.
 
@@ -49,6 +49,19 @@ En `soporte/` está un accesorio para medir anteojos sin compu y sin calibrar na
 
 Para regenerar las piezas: `cd soporte && npm install && node soporte.js`. Para el patrón: `python3 soporte/patron.py`.
 
+## Estación de autoexamen
+
+En `estacion/` está un segundo accesorio, para la parte en la que la persona se mide su propia vista. Es una mentonera con apoyo de frente y un riel con escala en centímetros por donde corre un carro con el celular.
+
+- **Distancia fija y conocida:** la cabeza queda apoyada y la escala del riel marca la distancia entre los ojos y la pantalla, con un error de unos 5 mm según la forma de la cara. La agudeza se mide a 40 cm y la rejilla de Amsler a 30 cm, con un tope que deja el carro en su lugar y no lo deja correrse al tocar la pantalla. No hace falta la cámara.
+- **Paleta tapaojo:** tapa un ojo sin usar la mano y se pasa al otro lado deslizándola. Se cuelga en el visor, que queda por delante de los anteojos.
+- **Placa estenopeica:** dos columnas alternadas de agujeritos de 1,4 mm. Si con el agujerito la persona lee mejor, la diferencia es de graduación; si no mejora, puede haber otra causa y conviene consultar. El informe lo interpreta.
+- **Punto lejano:** el carro se corre por el riel y se anota la marca de la escala. Con 3 tramos llega a 50 cm (miopías desde −2,00); con un cuarto tramo opcional, a 66 cm (desde −1,50).
+- **Archivos:** modelo paramétrico en JSCAD (`estacion/estacion.js`), STL en `estacion/stl/` y visor 3D en `estacion/index.html`. Las piezas entran en una cama de 180 × 180 mm y se imprimen sin soportes. `tools/test-estacion.js` revisa juegos, choques con la cara y con anteojos, líneas de mirada, oclusión, agujeritos e impresión.
+- **En la app:** en el paso «Distancia», «Con la estación».
+
+Para regenerar las piezas: `cd estacion && npm install && node estacion.js`.
+
 ## Cómo funciona
 
 - Es un solo archivo, `index.html`, sin servidor ni base de datos.
@@ -58,5 +71,6 @@ Para regenerar las piezas: `cd soporte && npm install && node soporte.js`. Para 
 ## Limitaciones
 
 - Es un prototipo para validar la idea: no es un dispositivo médico, no diagnostica y no reemplaza la consulta.
-- La estimación de miopía cubre de −1,50 D en adelante y no detecta hipermetropía.
+- La estimación de miopía cubre de −1,50 D en adelante (−2,00 con la estación de 3 tramos) y no detecta hipermetropía.
+- La estación todavía no se imprimió ni se probó con personas.
 - La medición de anteojos no sirve para lentes progresivas o bifocales.
